@@ -94,9 +94,6 @@ buildUtils.createLanguageDatasets(langQualifier)
 	// Save Job Spool to logFile
 	zUnitRunJCL.saveOutput(logFile, props.logEncoding)
 
-	// Store Report in Workspace
-	new CopyToHFS().dataset(props.zunit_bzureportPDS).member(member).file(reportLogFile).hfsEncoding(props.logEncoding).append(false).copy()
-
 	//	// Extract Job BZURPT as XML
 	//	def logEncoding = "UTF-8"
 	//	zUnitRunJCL.getAllDDNames().each({ ddName ->
@@ -130,12 +127,16 @@ buildUtils.createLanguageDatasets(langQualifier)
 	if ( jobRcStringArray.length > 1 ){
 		// Ok, the string can be splitted because it contains the keyword CC : Splitting by CC the second record contains the actual RC
 		rc = zUnitRunJCL.maxRC.split("CC")[1].toInteger()
-
+		
 		// manage processing the RC, up to your logic. You might want to flag the build as failed.
 		if (rc < props.zunit_maxPassRC.toInteger()){
 			println   "***  zUnit Test Job ${zUnitRunJCL.submittedJobId} completed with $rc "
+			// Store Report in Workspace
+			new CopyToHFS().dataset(props.zunit_bzureportPDS).member(member).file(reportLogFile).hfsEncoding(props.logEncoding).append(false).copy()
 		} else if (props.zunit_maxPassRC.toInteger() >= 4 && rc <props.zunit_maxWarnRC.toInteger()){
 			String warningMsg = "*! The zunit test returned a warning ($rc) for $buildFile"
+			// Store Report in Workspace
+			new CopyToHFS().dataset(props.zunit_bzureportPDS).member(member).file(reportLogFile).hfsEncoding(props.logEncoding).append(false).copy()
 			println warningMsg
 			buildUtils.updateBuildResult(warningMsg:warningMsg,logs:["${member}_zunit.log":logFile],client:getRepositoryClient())
 		} else { // rc >= props.zunit_maxWarnRC.toInteger()
