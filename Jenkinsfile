@@ -5,7 +5,7 @@ def gitUrl = 'git@github.ibm.com:zDevOps-Acceleration/dbb-zappbuild.git'
 def gitCredId = 'drice-us'
 
 // application
-def GitBranch = 'development'
+def GitBranch = 'development-aug2020-ztec201'
 def zAppBuild = 'dbb-zappbuild-vanilla'
 
 //dbb script from public github
