@@ -2,7 +2,7 @@
 
 // git
 def gitUrl = 'git@github.ibm.com:zDevOps-Acceleration/dbb-zappbuild.git'
-def gitCredId = 'dennis-behm-at-public-github'
+def gitCredId = 'drice-us'
 
 // application
 def GitBranch = 'development'
