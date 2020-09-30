@@ -51,7 +51,7 @@ node (label: 'ztec-201-STC') {
 	
 	
 	stage("Build") {
-	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq DBEHM.ZAPP.CLEAN --workDir ${WORKSPACE}/work --application MortgageApplication --logEncoding UTF-8 --fullBuild --verbose"
+	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq DBEHM.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --fullBuild --verbose"
 		dir ("${WORKSPACE}/work") {
 	    archiveArtifacts allowEmptyArchive: true, 
 											artifacts: '*.log,*.json,*.html',  
@@ -62,7 +62,8 @@ node (label: 'ztec-201-STC') {
 	}
 
 	stage("Run IDZ Code Review") {
-	    sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/work --memberList /var/dbb/integrations/idz-codereview/memberListUTF8.txt"
+		BUILD_OUTPUT_FOLDER = sh (script: "ls ${WORKSPACE}/BUILD-${BUILD_NUMBER}", returnStdout: true).trim()
+	    sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --memberList /var/dbb/integrations/idz-codereview/memberListUTF8.txt"
 		
 		dir ("${WORKSPACE}/work") {
 	    archiveArtifacts allowEmptyArchive: true, 
