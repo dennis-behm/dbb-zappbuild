@@ -63,7 +63,7 @@ node (label: 'ztec-201-STC') {
 
 	stage("Run IDZ Code Review") {
 		BUILD_OUTPUT_FOLDER = sh (script: "ls ${WORKSPACE}/BUILD-${BUILD_NUMBER}", returnStdout: true).trim()
-	    sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --memberList /var/dbb/integrations/idz-codereview/memberListUTF8.txt"
+	    sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --properties /var/dbb/extensions/idz-codereview/codereview.properties"
 		
 		dir ("${WORKSPACE}/work") {
 	    archiveArtifacts allowEmptyArchive: true, 
