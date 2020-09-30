@@ -62,7 +62,7 @@ node (label: 'ztec-201-STC') {
 	}
 
 	stage("Run IDZ Code Review") {
-	    sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/Pipeline/RunIDZCodeReview//RunCodeReview.groovy --workDir ${WORKSPACE}/work --memberList /var/dbb/integrations/idz-codereview/memberListUTF8.txt"
+	    sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/work --memberList /var/dbb/integrations/idz-codereview/memberListUTF8.txt"
 		
 		dir ("${WORKSPACE}/work") {
 	    archiveArtifacts allowEmptyArchive: true, 
