@@ -51,7 +51,7 @@ node (label: 'ztec-201-STC') {
 	
 	
 	stage("Build") {
-	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq DBEHM.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --fullBuild --verbose"
+	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --fullBuild --verbose"
 		dir ("${WORKSPACE}/work") {
 	    archiveArtifacts allowEmptyArchive: true,
 											artifacts: '*.log,*.json,*.html',
@@ -60,7 +60,7 @@ node (label: 'ztec-201-STC') {
 	    }
 		
 	}
-
+        /*
 	stage("Run IDZ Code Review") {
 		BUILD_OUTPUT_FOLDER = sh (script: "ls ${WORKSPACE}/BUILD-${BUILD_NUMBER}", returnStdout: true).trim()
 	    sh "${groovyz} -Dlog4j.configurationFile=/var/dbb/config/log4j2.properties ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --properties /var/dbb/extensions/idz-codereview/codereview.properties"
@@ -72,7 +72,7 @@ node (label: 'ztec-201-STC') {
 											onlyIfSuccessful: false
 	    }
 	}
-	
+	*/
 	stage("Package") {
         sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool /var/ucd/v6.2.5/agents/agentDev/bin/buztool.sh --workDir ${WORKSPACE}/work --component ${ucdComponent} --ar ${artifactoryConfig}"
 
