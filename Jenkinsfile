@@ -14,8 +14,9 @@ def dbbGitBranch = 'master'
 
 // ucd configuration
 def ucdComponent = 'MortgageApplication'
-def artifactoryConfig = '/var/ucd/v6.2.5/agents/agentDev/conf/artifactrepository/MortgageApplication.artifactory.properties'
+def artifactoryConfig = '/var/ucd/agent/conf/artifactrepository/${ucdComponent}.artifactory.properties'
 def buztoolLocation = '/var/ucd/agent/bin/buztool.sh'
+
 //system
 def groovyz = '/var/dbb/v1.0.9.ifix1/bin/groovyz'
 
