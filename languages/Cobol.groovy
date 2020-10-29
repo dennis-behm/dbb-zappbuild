@@ -206,6 +206,9 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 	if (isMQ && isMQ.toBoolean())
 		compile.dd(new DDStatement().dsn(props.SCSQCOBC).options("shr"))
 
+	// TODO: Add to zAppbuild 	
+	compile.dd(new DDStatement().dsn("CEE.SCEESAMP").options("shr"))
+		
 	// add additional zunit libraries
 	if (isZUnitTestCase)
 	compile.dd(new DDStatement().dsn(props.SBZUSAMP).options("shr"))
