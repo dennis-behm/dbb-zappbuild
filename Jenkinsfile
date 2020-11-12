@@ -61,7 +61,7 @@ node (label: 'ztec-201-STC') {
 		
 		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
 	    archiveArtifacts allowEmptyArchive: true,
-											artifacts: '*.log,*.json,*.html',
+											artifacts: '*.log,*.json,*.html,*.txt',
 											excludes: '*clist',
 											onlyIfSuccessful: false
 	    }
