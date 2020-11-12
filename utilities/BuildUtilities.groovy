@@ -160,7 +160,8 @@ def sortBuildList(List<String> buildList, String rankPropertyName) {
 def updateBuildResult(Map args) {
 	// args : errorMsg / warningMsg, logs[logName:logFile], client:repoClient
 
-	if (args.client) {
+	// update build results only in non-userbuild scenarios 
+	if (args.client && !props.userBuild) {
 		def buildResult = args.client.getBuildResult(props.applicationBuildGroup, props.applicationBuildLabel)
 		if (!buildResult) {
 			println "*! No build result found for BuildGroup '${props.applicationBuildGroup}' and BuildLabel '${props.applicationBuildLabel}'"
@@ -331,7 +332,7 @@ def relativizeFolderPath(String folder, String path) {
  * getScannerInstantiates - returns the mapped scanner or default scanner
  */
 def getScanner(String buildFile){
-	if (props.runzTests == "True") {
+	if (props.runzTests && props.runzTests.toBoolean()) {
 		scannerUtils= loadScript(new File("ScannerUtilities.groovy"))
 		scanner = scannerUtils.getScanner(buildFile)
 	}
