@@ -18,10 +18,11 @@ println("** Building files mapped to ${this.class.getName()}.groovy script")
 // verify required build properties
 buildUtils.assertBuildProperties(props.cobol_requiredBuildProperties)
 
+// create language datasets
 def langQualifier = "cobol"
 buildUtils.createLanguageDatasets(langQualifier)
 
-if (props.runzTests == "True") {
+if (props.runzTests && props.runzTests.toBoolean()) {
 	langQualifier = "cobol_test"
 	buildUtils.createLanguageDatasets(langQualifier)
 }
@@ -254,8 +255,10 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 	// define the MVSExec command to link edit the program
 	MVSExec linkedit = new MVSExec().file(buildFile).pgm(linker).parm(parms)
 
-	// Create a pysical link card
+	// Create a physical link card
 	if ( (linkEditStream) || (props.debug && linkDebugExit!= null)) {
+		def langQualifier = "linkedit"
+		buildUtils.createLanguageDatasets(langQualifier)
 		def lnkFile = new File("${props.buildOutDir}/linkCard.lnk")
 		if (lnkFile.exists())
 			lnkFile.delete()
@@ -323,12 +326,3 @@ def getRepositoryClient() {
 
 	return repositoryClient
 }
-
-
-
-
-
-
-
-
-
