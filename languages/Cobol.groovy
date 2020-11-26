@@ -201,12 +201,20 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 		compile.dd(new DDStatement().dsn(props.bms_cpyPDS).options("shr"))
 	if(props.team)
 		compile.dd(new DDStatement().dsn(props.cobol_BMS_PDS).options("shr"))
+		
+	// add custom concatenation
+	def compileSyslibConcatenation = props.getFileProperty('cobol_compileSyslibConcatenation', buildFile) ?: ""
+	if (compileSyslibConcatenation) {
+		def String[] syslibDatasets = compileSyslibConcatenation.split(',');
+		for (String syslibDataset : syslibDatasets )
+		compile.dd(new DDStatement().dsn(syslibDataset).options("shr"))
+	}
 	if (buildUtils.isCICS(logicalFile))
 		compile.dd(new DDStatement().dsn(props.SDFHCOB).options("shr"))
 	String isMQ = props.getFileProperty('cobol_isMQ', buildFile)
 	if (isMQ && isMQ.toBoolean())
 		compile.dd(new DDStatement().dsn(props.SCSQCOBC).options("shr"))
-
+		
 	// add additional zunit libraries
 	if (isZUnitTestCase)
 	compile.dd(new DDStatement().dsn(props.SBZUSAMP).options("shr"))
@@ -252,8 +260,10 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 	// define the MVSExec command to link edit the program
 	MVSExec linkedit = new MVSExec().file(buildFile).pgm(linker).parm(parms)
 
-	// Create a pysical link card
+	// Create a physical link card
 	if ( (linkEditStream) || (props.debug && linkDebugExit!= null)) {
+		def langQualifier = "linkedit"
+		buildUtils.createLanguageDatasets(langQualifier)
 		def lnkFile = new File("${props.buildOutDir}/linkCard.lnk")
 		if (lnkFile.exists())
 			lnkFile.delete()
@@ -295,6 +305,14 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 
 	// add a syslib to the compile command with optional CICS concatenation
 	linkedit.dd(new DDStatement().name("SYSLIB").dsn(props.cobol_objPDS).options("shr"))
+	
+	// add custom concatenation
+	def linkEditSyslibConcatenation = props.getFileProperty('cobol_linkEditSyslibConcatenation', buildFile) ?: ""
+	if (linkEditSyslibConcatenation) {
+		def String[] syslibDatasets = linkEditSyslibConcatenation.split(',');
+		for (String syslibDataset : syslibDatasets )
+		linkedit.dd(new DDStatement().dsn(syslibDataset).options("shr"))
+	}
 	linkedit.dd(new DDStatement().dsn(props.SCEELKED).options("shr"))
 
 	// Add Debug Dataset to find the debug exit to SYSLIB
@@ -321,12 +339,3 @@ def getRepositoryClient() {
 
 	return repositoryClient
 }
-
-
-
-
-
-
-
-
-
