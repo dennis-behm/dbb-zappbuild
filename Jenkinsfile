@@ -105,8 +105,8 @@ node (label: 'ztec-201-STC') {
 	
 	stage('Run UCD Deployment') {
             steps {
-                script{
-                    if ( hasBuildFiles ) {
+               // script{
+               //     if ( hasBuildFiles ) {
                         script{
                             step(
                                   [$class: 'UCDeployPublisher',
@@ -119,8 +119,8 @@ node (label: 'ztec-201-STC') {
                                         deployVersions: ucdComponent + ':latest'],
                                     siteName: ucdSite])
                         }
-                    }
-                }
+                //    }
+               // }
             }
         }
 	
