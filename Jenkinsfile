@@ -20,7 +20,7 @@ def buztoolLocation = '/var/ucd/agent/bin/buztool.sh'
 // UCD
 def ucdApplication = 'MortgageApplication'
 def ucdProcess = 'deploy'
-def ucdComponent = 'MortgageApplication'
+//def ucdComponent = 'MortgageApplication'
 def ucdEnv = 'INT'
 def ucdSite = 'ztecEnv'
 
