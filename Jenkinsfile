@@ -17,6 +17,13 @@ def ucdComponent = 'MortgageApplication'
 def artifactoryConfig = '/var/ucd/agent/conf/artifactrepository/MortgageApplication.artifactory.properties'
 def buztoolLocation = '/var/ucd/agent/bin/buztool.sh'
 
+// UCD
+def ucdApplication = 'MortgageApplication'
+def ucdProcess = 'deploy'
+def ucdComponent = 'MortgageApplication'
+def ucdEnv = 'INT'
+def ucdSite = 'ztecEnv'
+
 //system
 def groovyz = '/var/dbb/v1.0.9.ifix1/bin/groovyz'
 
@@ -95,5 +102,26 @@ node (label: 'ztec-201-STC') {
 //	stage("Run Deployment") {
 //        sh "${groovyz} /var/dbb/integrations/ucd-deployment/UCDDeploy.groovy "
 //	}
+	
+	stage('Run UCD Deployment') {
+            steps {
+                script{
+                    if ( hasBuildFiles ) {
+                        script{
+                            step(
+                                  [$class: 'UCDeployPublisher',
+                                    deploy: [
+                                        deployApp: ucdApplication,
+                                        deployDesc: 'Requested from Jenkins',
+                                        deployEnv: ucdEnv,
+                                        deployOnlyChanged: false,
+                                        deployProc: ucdProcess,
+                                        deployVersions: ucdComponent + ':latest'],
+                                    siteName: ucdSite])
+                        }
+                    }
+                }
+            }
+        }
 	
 }
