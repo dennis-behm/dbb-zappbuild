@@ -27,6 +27,8 @@ def ucdSite = 'ztecEnv'
 //system
 def groovyz = '/var/dbb/v1.0.9.ifix1/bin/groovyz'
 
+pipeline {
+
 node (label: 'ztec-201-STC') {
 
     def workOutoutDir = "${WORKSPACE}/work"
@@ -124,4 +126,6 @@ node (label: 'ztec-201-STC') {
             }
         }
 	
+}
+
 }
