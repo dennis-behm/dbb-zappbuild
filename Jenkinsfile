@@ -79,11 +79,14 @@ node (label: 'ztec-201-STC') {
 	    sh "${groovyz} -Dlog4j.configurationFile=/var/dbb/config/log4j2.properties ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --properties /var/dbb/extensions/idz-codereview/codereview.properties"
 		
 		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
-	    archiveArtifacts allowEmptyArchive: true,
+		crContent = readFile file: "CodeReviewJUNIT.xml"
+		 archiveArtifacts allowEmptyArchive: true,
 											artifacts: '*.csv,*.xml',
 											excludes: '*clist',
 											onlyIfSuccessful: false
 	    }
+	    writeFile file: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}/CodeReviewJUNIT.xml", text:crContent.trim()
+		junit allowEmptyResults: true, skipPublishingChecks: true, testResults: "BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml"
 	}
 	
 	stage("Package") {
