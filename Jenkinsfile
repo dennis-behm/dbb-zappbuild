@@ -128,7 +128,6 @@ node (label: 'ztec-201-STC') {
 							def regex = java.util.regex.Pattern.compile("Deployment request id is: \'(.*)\'")
 							def matcher = regex.matcher(readFile("UCD-DEPLOY-${BUILD_NUMBER}.log"))
 							if (matcher.find()) {
-)
 								def requestUri = "${ucdUri}/#applicationProcessRequest/${matcher.group(1)}"
 								echo "UCD Deployment request: ${requestUri}"
 								createSummary icon:"star-gold.png", text: "<a href=\'$requestUri\' target=\'_other\'>UCD Deployment request</a>"
