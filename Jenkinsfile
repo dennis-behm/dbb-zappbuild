@@ -23,23 +23,8 @@ def ucdProcess = 'deploy'
 //def ucdComponent = 'MortgageApplication'
 def ucdEnv = 'INT'
 def ucdSite = 'ztecEnv'
+def ucdUri = 'https://10.3.20.233:8443/'
 
-@NonCPS
-String getUCDUrl(String siteName) {
-	def config = Jenkins.instance.getDescriptor("com.urbancode.jenkins.plugins.ucdeploy.GlobalConfig")
-	def uril = null
-	if ( config ) {
-		config.getSites().each {
-			//println "${siteName}"
-			//println "UCD URI : ${it.getUri()}"
-			//println "UCD SITE: ${it.getProfileName()}"
-			if ( "${it.getProfileName()}" == "${siteName}" ) {
-				uri = "${it.getUri()}"
-			}
-		}
-	}
-	return uri
-}
 
 //system
 def groovyz = '/var/dbb/v1.0.9.ifix1/bin/groovyz'
@@ -143,7 +128,7 @@ node (label: 'ztec-201-STC') {
 							def regex = java.util.regex.Pattern.compile("Deployment request id is: \'(.*)\'")
 							def matcher = regex.matcher(readFile("UCD-DEPLOY-${BUILD_NUMBER}.log"))
 							if (matcher.find()) {
-								def ucdUri = getUCDUrl(ucdSite)
+)
 								def requestUri = "${ucdUri}/#applicationProcessRequest/${matcher.group(1)}"
 								echo "UCD Deployment request: ${requestUri}"
 								createSummary icon:"star-gold.png", text: "<a href=\'$requestUri\' target=\'_other\'>UCD Deployment request</a>"
