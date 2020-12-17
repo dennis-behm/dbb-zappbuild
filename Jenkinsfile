@@ -85,8 +85,8 @@ node (label: 'ztec-201-STC') {
 											excludes: '*clist',
 											onlyIfSuccessful: false
 	    }
-	    writeFile file: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}/CodeReviewJUNIT.xml", text:crContent.trim()
-		junit allowEmptyResults: true, skipPublishingChecks: true, testResults: "BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml"
+	    writeFile file: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}/CodeReviewJUNITT.xml", text:crContent.trim()
+		junit allowEmptyResults: true, skipPublishingChecks: true, testResults: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}/CodeReviewJUNITT.xml"
 	}
 	
 	stage("Package") {
