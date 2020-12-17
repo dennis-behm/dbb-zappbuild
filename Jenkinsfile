@@ -111,16 +111,26 @@ node (label: 'ztec-201-STC') {
                // script{
                //     if ( hasBuildFiles ) {
                         script{
-                            step(
-                                  [$class: 'UCDeployPublisher',
-                                    deploy: [
-                                        deployApp: ucdApplication,
-                                        deployDesc: 'Requested from Jenkins',
-                                        deployEnv: ucdEnv,
-                                        deployOnlyChanged: false,
-                                        deployProc: ucdProcess,
-                                        deployVersions: ucdComponent + ':latest'],
-                                    siteName: ucdSite])
+                          tee("UCD-DEPLOY-${BUILD_NUMBER}.log") {
+								step(
+									 [$class: 'UCDeployPublisher',
+										deploy: [
+											deployApp: ucdApplication,
+											deployDesc: 'Requested from Jenkins',
+											deployEnv: ucdEnv,
+											deployOnlyChanged: false,
+											deployProc: ucdProcess,
+											deployVersions: ucdComponent + ':latest'],
+										siteName: ucdSite])
+							}
+							def regex = java.util.regex.Pattern.compile("Deployment request id is: \'(.*)\'")
+							def matcher = regex.matcher(readFile("UCD-DEPLOY-${BUILD_NUMBER}.log"))
+							if (matcher.find()) {
+								def ucdUri = getUCDUrl(ucdSite)
+								def requestUri = "${ucdUri}/#applicationProcessRequest/${matcher.group(1)}"
+								echo "UCD Deployment request: ${requestUri}"
+								createSummary icon:"star-gold.png", text: "<a href=\'$requestUri\' target=\'_other\'>UCD Deployment request</a>"
+							}
                         }
                 //    }
                // }
