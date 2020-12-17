@@ -24,6 +24,23 @@ def ucdProcess = 'deploy'
 def ucdEnv = 'INT'
 def ucdSite = 'ztecEnv'
 
+@NonCPS
+String getUCDUrl(String siteName) {
+	def config = Jenkins.instance.getDescriptor("com.urbancode.jenkins.plugins.ucdeploy.GlobalConfig")
+	def uril = null
+	if ( config ) {
+		config.getSites().each {
+			//println "${siteName}"
+			//println "UCD URI : ${it.getUri()}"
+			//println "UCD SITE: ${it.getProfileName()}"
+			if ( "${it.getProfileName()}" == "${siteName}" ) {
+				uri = "${it.getUri()}"
+			}
+		}
+	}
+	return uri
+}
+
 //system
 def groovyz = '/var/dbb/v1.0.9.ifix1/bin/groovyz'
 
