@@ -246,7 +246,8 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 	
 	if (buildUtils.isCICS(logicalFile))
 		linkedit.dd(new DDStatement().dsn(props.SDFHLOAD).options("shr"))
-	else if (buildUtils.isSQL(logicalFile))
+
+	if (buildUtils.isSQL(logicalFile))
 		linkedit.dd(new DDStatement().dsn(props.SDSNLOAD).options("shr"))
 
 	// add a copy command to the linkedit command to append the SYSPRINT from the temporary dataset to the HFS log file
