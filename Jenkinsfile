@@ -40,7 +40,11 @@ node (label: 'ztec-201-STC') {
 
 	stage('Git Checkout') {
 		dir (zAppBuild) {
-			checkout([$class: 'GitSCM', branches: [[name: GitBranch]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
+			checkout([$class: 'GitSCM', branches: [[name: env.BRANCH_NAME]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
+			env.GIT_COMMIT = scmVars.GIT_COMMIT
+    			env.DATASET_BRANCH = env.BRANCH_NAME.take(8).toUpperCase()
+    			env.COLLECTION_BRANCH = env.BRANCH_NAME.capitalize()
+			
 		}
 		
 		dir("dbb") {
@@ -58,11 +62,10 @@ node (label: 'ztec-201-STC') {
                     }
 		
 	}
-	
-	
+
 	stage("Build") {
 	    //sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --reset --verbose"
-	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --impactBuild --verbose"
+	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --impactBuild --verbose"
 	
 	    //calculating the Buildoutput folder name
 	
