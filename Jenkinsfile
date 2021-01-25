@@ -27,7 +27,7 @@ def ucdUri = 'https://10.3.20.233:8443/'
 
 
 //system
-def groovyz = '/var/dbb/v1.0.9.ifix1/bin/groovyz'
+def groovyz = '/usr/lpp/dbb/v1r0/bin/groovyz'
 
 node (label: 'ztec-201-STC') {
 
@@ -65,7 +65,7 @@ node (label: 'ztec-201-STC') {
 
 	stage("Build") {
 	    //sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --reset --verbose"
-	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --fullBuild --verbose"
+	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --fullBuild --verbose --url https://10.3.20.96:10443/dbb --id ADMIN --pw ADMIN"
 	
 	    //calculating the Buildoutput folder name
 	
