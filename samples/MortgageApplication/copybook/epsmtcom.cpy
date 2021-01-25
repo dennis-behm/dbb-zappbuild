@@ -1,4 +1,4 @@
           10  PROCESS-INDICATOR               PIC X.
-      *   Trigger 6
+      *   Trigger 8
           COPY EPSMTINP.
           COPY EPSMTOUT.
