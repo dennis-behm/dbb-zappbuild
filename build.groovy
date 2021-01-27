@@ -4,6 +4,7 @@ import com.ibm.dbb.dependency.*
 import com.ibm.dbb.build.*
 import com.ibm.dbb.build.report.*
 import com.ibm.dbb.build.html.*
+import com.ibm.dbb.build.report.records.*
 import groovy.util.*
 import groovy.transform.*
 import groovy.time.*
@@ -16,6 +17,7 @@ import groovy.xml.*
 @Field def buildUtils= loadScript(new File("utilities/BuildUtilities.groovy"))
 @Field def impactUtils= loadScript(new File("utilities/ImpactUtilities.groovy"))
 @Field String hashPrefix = ':githash:'
+@Field String committerPrefix = ':gitcommitter:'
 @Field RepositoryClient repositoryClient
 
 // start time message
@@ -473,12 +475,18 @@ def finalizeBuildProcess(Map args) {
 		if (props.verbose)
 			println "** Updating build result BuildGroup:${props.applicationBuildGroup} BuildLabel:${props.applicationBuildLabel}"
 		def buildResult = repositoryClient.getBuildResult(props.applicationBuildGroup, props.applicationBuildLabel)
+		// Build Report Record
+		PropertiesRecord buildReportRecord = new PropertiesRecord()
+		buildReportRecord.addProperty("buidConfiguration","")
+		// Build Result
 		buildResult.setBuildReport(new FileInputStream(htmlOutputFile))
 		buildResult.setBuildReportData(new FileInputStream(jsonOutputFile))
 		buildResult.setProperty("filesProcessed", String.valueOf(args.count))
 		buildResult.setState(buildResult.COMPLETE)
 		
-		// add git hashes for each build directory
+		buildReportRecord.addProperty("filesProcessed", String.valueOf(args.count))
+
+		// add git hashes and git commiter for each build directory
 		List<String> srcDirs = []
 		if (props.applicationSrcDirs)
 			srcDirs.addAll(props.applicationSrcDirs.trim().split(','))
@@ -487,9 +495,13 @@ def finalizeBuildProcess(Map args) {
 			dir = buildUtils.getAbsolutePath(dir)
 			if (props.verbose) println "*** Obtaining hash for directory $dir"
 			if (gitUtils.isGitDir(dir)) {
+				
 				String hash = gitUtils.getCurrentGitHash(dir)
 				String key = "$hashPrefix${buildUtils.relativizePath(dir)}"
+				
 				buildResult.setProperty(key, hash)
+				buildReportRecord.addProperty(key,hash)
+				
 				if (props.verbose) println "** Setting property $key : $hash"
 			}
 			else {
@@ -498,7 +510,9 @@ def finalizeBuildProcess(Map args) {
 		}
 		
 		// save build result
+		buildReport.addRecord(buildReportRecord)
 		buildResult.save()
+		
 	
 	}
 	

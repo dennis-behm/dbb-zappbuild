@@ -7,6 +7,8 @@ import java.nio.file.Path
 import java.nio.file.PathMatcher
 import groovy.json.JsonSlurper
 import groovy.transform.*
+import com.ibm.dbb.build.report.*
+import com.ibm.dbb.build.report.records.*
 
 // define script properties
 @Field BuildProperties props = BuildProperties.getInstance()
@@ -20,6 +22,12 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 	Set<String> changedFiles = new HashSet<String>()
 	Set<String> deletedFiles = new HashSet<String>()
 	Set<String> renamedFiles = new HashSet<String>()
+	
+	PropertiesRecord gitBuildSetBuildReportRecord = new PropertiesRecord()
+	gitBuildSetBuildReportRecord.addProperty("buildSet","")
+	
+	PropertiesRecord gitDeletedInfoBuildReportRecord = new PropertiesRecord()
+	gitDeletedInfoBuildReportRecord.addProperty("deletedFiles","")
 
 	// get the last build result to get the baseline hashes
 	def lastBuildResult = repositoryClient.getLastBuildResult(props.applicationBuildGroup, BuildResult.COMPLETE, BuildResult.CLEAN)
@@ -53,8 +61,9 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 
 	// create build list using impact analysis
 	Set<String> buildSet = new HashSet<String>()
-	changedFiles.each { changedFile ->
+	changedFiles.each { changedFile, gitHash ->
 		// if the changed file has a build script then add to build list
+		gitBuildSetBuildReportRecord.addProperty(changedFile,gitHash)
 		if (ScriptMappings.getScriptName(changedFile)) {
 			buildSet.add(changedFile)
 			if (props.verbose) println "** Found build script mapping for $changedFile. Adding to build list"
@@ -93,6 +102,10 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 			if (props.verbose) println "** Impact analysis for $changedFile has been skipped due to configuration."
 		}
 	}
+	
+	//adding record
+	BuildReportFactory.getBuildReport().addRecord(gitBuildSetBuildReportRecord)
+	BuildReportFactory.getBuildReport().addRecord(gitDeletedInfoBuildReportRecord)
 
 	return [buildSet, deletedFiles]
 }
@@ -137,15 +150,6 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 
 	// calculate the changed and deleted files by diff'ing the current and baseline hashes
 	
-	PropertiesRecord gitChangedInfoBuildReportRecord = new PropertiesRecord()
-	gitChangedInfoBuildReportRecord.addProperty("changedFiles","")
-	
-	PropertiesRecord gitDeletedInfoBuildReportRecord = new PropertiesRecord()
-	gitDeletedInfoBuildReportRecord.addProperty("deletedFiles","")
-	
-	PropertiesRecord gitRenamedInfoBuildReportRecord = new PropertiesRecord()
-	gitRenamedInfoBuildReportRecord.addProperty("renamedFiles","")
-	
 	directories.each { dir ->
 		dir = buildUtils.getAbsolutePath(dir)
 		if (props.verbose) println "** Calculating changed files for directory $dir"
@@ -177,8 +181,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 			if ( !matches(file, excludeMatchers)) {
 				(file, mode) = fixGitDiffPath(file, dir, true, null)
 				if ( file != null ) {
-					changedFiles << file
-					gitChangedInfoBuildReportRecord.addProperty(file,current)
+					changedFiles << [file,current]
 					if (props.verbose) println "**** $file"
 				}
 			}
@@ -189,7 +192,6 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 			if ( !matches(file, excludeMatchers)) {
 				file = fixGitDiffPath(file, dir, false, mode)
 				deletedFiles << file
-				gitDeletedInfoBuildReportRecord.addProperty(file,current)
 				if (props.verbose) println "**** $file"
 			}
 		}
@@ -199,18 +201,12 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 			if ( !matches(file, excludeMatchers)) {
 				file = fixGitDiffPath(file, dir, false, mode)
 				renamedFiles << file
-				gitRenamedInfoBuildReportRecord.addProperty(file,current)
 				if (props.verbose) println "**** $file"
 			}
 		}
 	}
 	if (props.verbose) println "*** Storing generic PropertyRecord with file->githash"
 	
-	//adding record
-	BuildReportFactory.getBuildReport().addRecord(gitChangedInfoBuildReportRecord)
-	BuildReportFactory.getBuildReport().addRecord(gitDeletedInfoBuildReportRecord)
-	BuildReportFactory.getBuildReport().addRecord(gitRenamedInfoBuildReportRecord)
-
 	return [
 		changedFiles,
 		deletedFiles,
