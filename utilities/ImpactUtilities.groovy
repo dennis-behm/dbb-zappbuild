@@ -136,6 +136,16 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 	}
 
 	// calculate the changed and deleted files by diff'ing the current and baseline hashes
+	
+	PropertiesRecord gitChangedInfoBuildReportRecord = new PropertiesRecord()
+	gitChangedInfoBuildReportRecord.addProperty("changedFiles","")
+	
+	PropertiesRecord gitDeletedInfoBuildReportRecord = new PropertiesRecord()
+	gitDeletedInfoBuildReportRecord.addProperty("deletedFiles","")
+	
+	PropertiesRecord gitRenamedInfoBuildReportRecord = new PropertiesRecord()
+	gitRenamedInfoBuildReportRecord.addProperty("renamedFiles","")
+	
 	directories.each { dir ->
 		dir = buildUtils.getAbsolutePath(dir)
 		if (props.verbose) println "** Calculating changed files for directory $dir"
@@ -168,6 +178,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 				(file, mode) = fixGitDiffPath(file, dir, true, null)
 				if ( file != null ) {
 					changedFiles << file
+					gitChangedInfoBuildReportRecord.addProperty(file,current)
 					if (props.verbose) println "**** $file"
 				}
 			}
@@ -178,6 +189,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 			if ( !matches(file, excludeMatchers)) {
 				file = fixGitDiffPath(file, dir, false, mode)
 				deletedFiles << file
+				gitDeletedInfoBuildReportRecord.addProperty(file,current)
 				if (props.verbose) println "**** $file"
 			}
 		}
@@ -187,10 +199,17 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 			if ( !matches(file, excludeMatchers)) {
 				file = fixGitDiffPath(file, dir, false, mode)
 				renamedFiles << file
+				gitRenamedInfoBuildReportRecord.addProperty(file,current)
 				if (props.verbose) println "**** $file"
 			}
 		}
 	}
+	if (props.verbose) println "*** Storing generic PropertyRecord with file->githash"
+	
+	//adding record
+	BuildReportFactory.getBuildReport().addRecord(gitChangedInfoBuildReportRecord)
+	BuildReportFactory.getBuildReport().addRecord(gitDeletedInfoBuildReportRecord)
+	BuildReportFactory.getBuildReport().addRecord(gitRenamedInfoBuildReportRecord)
 
 	return [
 		changedFiles,
