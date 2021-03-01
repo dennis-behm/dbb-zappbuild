@@ -15,6 +15,7 @@
       *       MONTHLY PAYMENT
       *
       *    (C) 2020 IBM
+      *    Change for demo
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
        SOURCE-COMPUTER. FLEX-ES.
