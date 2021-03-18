@@ -152,18 +152,18 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 			def _changed = []
 			(_changed, deleted) = gitUtils.getChangedFiles(dir, baseline, current )
 			List<PathMatcher> excludeMatchers = createPathMatcherPattern(props.excludeFileList)
-			
+
 			// make sure file is not an excluded file
 			_changed.each { file ->
 				if ( !matches(file, excludeMatchers)) {
 					changed.add(file)
 				}
 			}
-			
-		/*	scmBuildRecords = gitUtils.getBuildConfiguration(dir, baseline, current )
-			scmBuildRecords.each{ buildRecord ->
-				BuildReportFactory.getBuildReport().addRecord(buildRecord)
-			} */
+
+			/*	scmBuildRecords = gitUtils.getBuildConfiguration(dir, baseline, current )
+			 scmBuildRecords.each{ buildRecord ->
+			 BuildReportFactory.getBuildReport().addRecord(buildRecord)
+			 } */
 		}
 		else {
 			if (props.verbose) println "*! Directory $dir not a local Git repository. Skipping."
@@ -188,6 +188,34 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 	}
 
 	return [changedFiles, deletedFiles]
+}
+
+def createFeatureBuildList() {
+	Set<String> buildSet = new HashSet<String>()
+	// create the list of build directories
+	List<String> srcDirs = []
+	if (props.applicationSrcDirs)
+		srcDirs.addAll(props.applicationSrcDirs.split(','))
+
+	srcDirs.each{ dir ->
+		dir = getAbsolutePath(dir)
+		Set<String> fileSet = gitUtils.getModifiedFiles(dir,props.featureBuild)
+
+		fileSet.each{ file ->
+
+			file = fixGitDiffPath(file, dir, true)
+			if ( file != null ) {
+				if (ScriptMappings.getScriptName(file)) {
+					if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
+					buildSet.add(file)
+				}
+			}
+
+
+		}
+	}
+
+	return buildSet
 }
 
 def createImpactResolver(String changedFile, String rules, RepositoryClient repositoryClient) {
