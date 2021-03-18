@@ -25,16 +25,20 @@ def ucdEnv = 'INT'
 def ucdSite = 'ztecEnv'
 def ucdUri = 'https://10.3.20.233:8443/'
 
+//input parms
+
+properties([[$class: 'ParametersDefinitionProperty', parameterDefinitions: [[$class: 'StringParameterDefinition', name: 'feature', defaultValue: '<wi001>']]]])
+	echo "received ${binding.hasVariable('myparam') ? myparam : 'undefined'}"
+	
+    properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: '<wi...>', description: 'Specify your feature', name: 'Which feature do you would like to package', trim: false)])])
+
+
 
 node (label: 'ztec-201-STC') {
 
     def workOutoutDir = "${WORKSPACE}/work"
-
-    //input message: 'Which Feature do you would like to package', parameters: [string(defaultValue: '', description: 'Please specify the feature you would like to package', name: 'FeatureName', trim: false)]	
-
-	parameters {
-        	string(name: 'Which Feature do you would like to package', defaultValue: '<wi001>', description: 'Please specify the WI')
-    }
+	
+    	
 	
     stage ('Cleanup') {
         // rm
