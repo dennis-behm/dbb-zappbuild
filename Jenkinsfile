@@ -30,7 +30,8 @@ def ucdUri = 'https://10.3.20.233:8443/'
 properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: '<wi...>', description: 'Specify your feature', name: 'featureName', trim: false)])])
 echo "received ${featureName}"
 
-
+//system
+def groovyz = '/usr/lpp/dbb/v1r0/bin/groovyz'
 
 node (label: 'ztec-201-STC') {
 
