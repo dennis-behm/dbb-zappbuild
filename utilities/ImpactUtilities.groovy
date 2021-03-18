@@ -7,6 +7,9 @@ import java.nio.file.Path
 import java.nio.file.PathMatcher
 import groovy.json.JsonSlurper
 import groovy.transform.*
+import com.ibm.dbb.build.report.*
+import com.ibm.dbb.build.report.records.*
+
 
 // define script properties
 @Field BuildProperties props = BuildProperties.getInstance()
