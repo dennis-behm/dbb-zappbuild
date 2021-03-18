@@ -35,7 +35,7 @@
                                PIC 9(10)V99.
 
        01 W-CALL-PROGRAM                      PIC X(8).
-      *
+      * abc
        01 W-RETIREMENT-WA                     PIC 9(4).
        01 W-COMAREA-LENGTH                    PIC 9(4) COMP.
 
