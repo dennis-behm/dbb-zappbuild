@@ -52,8 +52,8 @@ def createFeatureBuildList() {
 
 	srcDirs.each{ dir ->
 		dir = getAbsolutePath(dir)
-		
 		Set<String> fileSet = gitUtils.getModifiedFiles(dir,props.featureBuild)
+		
 		fileSet.each{ file ->
 			if (ScriptMappings.getScriptName(file)) {
 				if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
