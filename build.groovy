@@ -160,6 +160,7 @@ options:
 	cli.l(longOpt:'logEncoding', args:1, 'Encoding of output logs. Default is EBCDIC')
 	cli.f(longOpt:'fullBuild', 'Flag indicating to build all programs for application')
 	cli.i(longOpt:'impactBuild', 'Flag indicating to build only programs impacted by changed files since last successful build.')
+	cli.fb(longOpt:'featureBuild', args:1,'Build a specific feature.')
 	cli.s(longOpt:'scanOnly', 'Flag indicating to only scan files for application')
 	cli.r(longOpt:'reset', 'Deletes the dependency collections and build result group from the DBB repository')
 	cli.v(longOpt:'verbose', 'Flag to turn on script trace')
@@ -291,6 +292,7 @@ def populateBuildProperties(String[] args) {
 	if (opts.l) props.logEncoding = opts.l
 	if (opts.f) props.fullBuild = 'true'
 	if (opts.i) props.impactBuild = 'true'
+	if (opts.fb) props.featureBuild = opts.fb
 	if (opts.s) props.scanOnly = 'true'
 	if (opts.r) props.reset = 'true'
 	if (opts.v) props.verbose = 'true'
@@ -373,6 +375,13 @@ def createBuildList() {
 		println "** --fullBuild option selected. $action all programs for application ${props.application}"
 		buildSet = buildUtils.createFullBuildList()			
 	}
+	
+	// check if full build
+	if (props.featureBuild) {
+		println "** --featureBuild option selected. $action all programs for feature ${props.featureBuild} application ${props.application} "
+		buildSet = buildUtils.createFeatureBuildList()			
+	}
+	
 	// check if impact build
 	else if (props.impactBuild) {
 		println "** --impactBuild option selected. $action impacted programs for application ${props.application} "
