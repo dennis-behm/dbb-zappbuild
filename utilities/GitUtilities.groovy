@@ -265,7 +265,7 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 	// 	f741490 (HEAD, tag: wi110.01, origin/master, refs/pipelines/694, refs/pipelines/693) Merge branch '5-wi110' into 'master'
 	// 	1b56a12 (tag: wi100.01, refs/pipelines/692) Merge branch '4-wi100' into 'master'
 
-	def modifiedFiles = []
+	Set<String> modifiedFiles = new HashSet<String>()
 	
 	String cmd = "git -C $gitDir --no-pager log --oneline --merges --format=%H;%D;%s"
 	def git_log = new StringBuffer()
