@@ -33,6 +33,8 @@ node (label: 'ztec-201-STC') {
 
     def workOutoutDir = "${WORKSPACE}/work"
 
+    input message: 'Which Feature do you would like to package', parameters: [string(defaultValue: '', description: 'Please specify the feature you would like to package', name: 'FeatureName', trim: false)]	
+	
     stage ('Cleanup') {
         // rm
         dir("${WORKSPACE}/work"){deleteDir()}
