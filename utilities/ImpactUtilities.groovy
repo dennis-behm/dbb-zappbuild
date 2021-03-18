@@ -198,7 +198,7 @@ def createFeatureBuildList() {
 		srcDirs.addAll(props.applicationSrcDirs.split(','))
 
 	srcDirs.each{ dir ->
-		dir = getAbsolutePath(dir)
+		dir = buildUtils.getAbsolutePath(dir)
 		Set<String> fileSet = gitUtils.getModifiedFiles(dir,props.featureBuild)
 
 		fileSet.each{ file ->
