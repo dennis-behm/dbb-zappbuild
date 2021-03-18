@@ -290,16 +290,16 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 			references = attributes[1]
 			msg = attributes[2]
 
-			println("hash: $hash")
-			println("ref : $references")
-			println("msg : $msg")
+			//println("hash: $hash")
+			//println("ref : $references")
+			//println("msg : $msg")
 
 			// getTag
 			refs = references.split(",")
 			refs.each{ ref ->
 				if (ref.contains("tag:")){
 					def tag = ref.split("tag:")[1]
-					println("! gittag : " + tag)
+					//println("! gittag : " + tag)
 				}
 			}
 
@@ -309,7 +309,7 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 			if (msg.contains(featureBranchName)){
 				(changedFiles,deletedFiles) = getChangedFilesMergeCommit(gitDir, hash)
 				changedFiles.each{ file ->
-					println("!!! $hash --->  $file ")
+					//println("!!! $hash --->  $file ")
 					modifiedFiles.add("$file")
 				}
 			}
@@ -328,8 +328,8 @@ def getChangedFilesMergeCommit(String gitDir, String hash) {
 	String cmd = "git -C $gitDir show --first-parent --pretty=format: --name-status $hash"
 	def gitDiff = new StringBuffer()
 	def gitError = new StringBuffer()
-	def changedFiles = []
-	def deletedFiles = []
+	Set<String> changedFiles = new HashSet<String>()
+	Set<String> deletedFiles = new HashSet<String>()
 
 	Process process = cmd.execute()
 	process.waitForProcessOutput(gitDiff, gitError)
