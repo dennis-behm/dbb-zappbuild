@@ -27,10 +27,8 @@ def ucdUri = 'https://10.3.20.233:8443/'
 
 //input parms
 
-properties([[$class: 'ParametersDefinitionProperty', parameterDefinitions: [[$class: 'StringParameterDefinition', name: 'feature', defaultValue: '<wi001>']]]])
-	echo "received ${binding.hasVariable('myparam') ? myparam : 'undefined'}"
-	
-    properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: '<wi...>', description: 'Specify your feature', name: 'Which feature do you would like to package', trim: false)])])
+properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: '<wi...>', description: 'Specify your feature', name: 'featureName', trim: false)])])
+echo "received ${featureName}"
 
 
 
