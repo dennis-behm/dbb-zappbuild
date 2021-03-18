@@ -37,7 +37,8 @@ properties([
                      defaultValue: 'master',
                      description: 'Specify a feature Branch for packaging',
                      name: 'BRANCH',
-                     quickFilterEnabled: false,
+                     quickFilterEnabled: true,
+                     listSize
                      selectedValue: 'NONE',
                      sortMode: 'NONE',
                      tagFilter: '*',
