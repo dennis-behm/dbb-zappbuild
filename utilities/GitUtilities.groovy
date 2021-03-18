@@ -319,7 +319,7 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 		}
 	}
 
-	return propertyRecords
+	return modifiedFiles
 
 }
 
