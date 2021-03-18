@@ -27,7 +27,7 @@ def ucdUri = 'https://10.3.20.233:8443/'
 
 //input parms
 
-properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: '<wi...>', description: 'Specify your feature', name: 'featureName', trim: false)])])
+properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: 'impactBuild', description: 'Specify your feature', name: 'featureName', trim: false)])])
 echo "received ${featureName}"
 
 //system
@@ -71,8 +71,11 @@ node (label: 'ztec-201-STC') {
 
 	stage("Build") {
 	    //sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --reset --verbose"
-	    sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild dennis-behm/wi001 --verbose"
-	
+		if (${featureName} == 'impactBuild'){
+			sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --impactBuild --verbose"
+		} else {
+	    		sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild ${featureName} --verbose"
+		}
 	    //calculating the Buildoutput folder name
 	
 	    BUILD_OUTPUT_FOLDER = sh (script: "ls ${WORKSPACE}/BUILD-${BUILD_NUMBER}", returnStdout: true).trim()
