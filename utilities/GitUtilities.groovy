@@ -3,6 +3,9 @@ import com.ibm.dbb.repository.*
 import com.ibm.dbb.dependency.*
 import com.ibm.dbb.build.*
 import groovy.transform.*
+import com.ibm.dbb.build.report.*
+import com.ibm.dbb.build.report.records.*
+
 
 /*
  * Tests if directory is in a local git repository
