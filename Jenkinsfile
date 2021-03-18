@@ -33,7 +33,11 @@ node (label: 'ztec-201-STC') {
 
     def workOutoutDir = "${WORKSPACE}/work"
 
-    input message: 'Which Feature do you would like to package', parameters: [string(defaultValue: '', description: 'Please specify the feature you would like to package', name: 'FeatureName', trim: false)]	
+    //input message: 'Which Feature do you would like to package', parameters: [string(defaultValue: '', description: 'Please specify the feature you would like to package', name: 'FeatureName', trim: false)]	
+
+	parameters {
+        	string(name: 'Which Feature do you would like to package', defaultValue: '<wi001>', description: 'Please specify the WI')
+    }
 	
     stage ('Cleanup') {
         // rm
