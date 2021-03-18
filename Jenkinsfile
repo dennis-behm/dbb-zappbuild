@@ -27,8 +27,23 @@ def ucdUri = 'https://10.3.20.233:8443/'
 
 //input parms
 
-properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: 'impactBuild', description: 'Specify your feature', name: 'featureName', trim: false)])])
-echo "received ${featureName}"
+//properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: 'impactBuild', description: 'Specify your feature', name: 'featureName', trim: false)])])
+//echo "received ${featureName}"
+
+properties([
+    parameters([
+        gitParameter(branch: '',
+                     branchFilter: 'origin/(.*)',
+                     defaultValue: 'master',
+                     description: 'Specify a feature Branch for packaging',
+                     name: 'BRANCH',
+                     quickFilterEnabled: false,
+                     selectedValue: 'NONE',
+                     sortMode: 'NONE',
+                     tagFilter: '*',
+                     type: 'PT_BRANCH')
+    ])
+])
 
 //system
 def groovyz = '/usr/lpp/dbb/v1r0/bin/groovyz'
@@ -71,10 +86,10 @@ node (label: 'ztec-201-STC') {
 
 	stage("Build") {
 	    //sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --reset --verbose"
-		if (featureName == 'impactBuild'){
+		if (params.BRANCH == 'master'){
 			sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --impactBuild --verbose"
 		} else {
-	    		sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild ${featureName} --verbose"
+	    		sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild ${params.BRANCH} --verbose"
 		}
 	    //calculating the Buildoutput folder name
 	
