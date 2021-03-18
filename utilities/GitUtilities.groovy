@@ -254,3 +254,118 @@ def getCurrentChangedFiles(String gitDir, String currentHash, String verbose) {
 	return [changedFiles, deletedFiles]
 }
 
+// Inspect git log to retrieve hash - file - tag mapping
+
+def getBuildConfiguration(String gitDir, String baseHash, String currentHash) {
+	// git --no-pager log --oneline --merges
+	// git --no-pager log --oneline --merges 6780aab1d08d1f658479d01eb02ce88964822d1d...f741490479655b34f0ffd38b7371959241af0184
+	// 	f741490 (HEAD, tag: wi110.01, origin/master, refs/pipelines/694, refs/pipelines/693) Merge branch '5-wi110' into 'master'
+	// 	1b56a12 (tag: wi100.01, refs/pipelines/692) Merge branch '4-wi100' into 'master'
+
+	String cmd = "git -C $gitDir --no-pager log --oneline --merges --format=%H;%D;%s $baseHash...$currentHash"
+	def git_log = new StringBuffer()
+	def git_error = new StringBuffer()
+
+	Process process = cmd.execute()
+	process.waitForProcessOutput(git_log, git_error)
+
+	// handle command error
+	if (git_error.size() > 0) {
+		println("*! Error executing Git command: $cmd error: $git_error")
+	}
+
+	Set<PropertiesRecord> propertyRecords = new HashSet<PropertiesRecord>()
+
+	//println ("Trace : $git_log")
+
+	for (line in git_log.toString().split("\n")) {
+		// process files from git diff
+		//println("Line: $line")
+		try {
+
+			PropertiesRecord buildconfigRecord = new PropertiesRecord()
+
+			attributes = line.split(";")
+			hash = attributes[0]
+			references = attributes[1]
+			msg = attributes[2]
+
+			//println("hash: $hash")
+
+			buildconfigRecord.addProperty("githash","$hash")
+
+			//println("ref : $references")
+			//println("msg : $msg")
+
+			// getTag
+			refs = references.split(",")
+			refs.each{ ref ->
+				if (ref.contains("tag:")){
+					def tag = ref.split("tag:")[1]
+				//	println("! gittag : " + tag)
+					buildconfigRecord.addProperty("gittag","$tag")
+				}
+			}
+
+			// hash
+			//println("! $hash")
+
+			// changedFiles
+			(changedFiles,deletedFiles) = getChangedFilesMergeCommit(gitDir, hash)
+			changedFiles.each{ file ->
+			//	println("!!! $file ")
+				buildconfigRecord.addProperty("$file","$hash")
+			}
+
+			propertyRecords.add(buildconfigRecord)
+
+		}
+		catch (Exception e) {
+			println e
+		}
+	}
+
+	return propertyRecords
+
+}
+
+def getChangedFilesMergeCommit(String gitDir, String hash) {
+	//println "** Running git command: git -C $gitDir show --first-parent --pretty=format: --name-status $hash"
+	String cmd = "git -C $gitDir show --first-parent --pretty=format: --name-status $hash"
+	def gitDiff = new StringBuffer()
+	def gitError = new StringBuffer()
+	def changedFiles = []
+	def deletedFiles = []
+
+	Process process = cmd.execute()
+	process.waitForProcessOutput(gitDiff, gitError)
+
+	// handle command error
+	if (gitError.size() > 0) {
+		println("*! Error executing Git command: $cmd error: $gitError")
+		println ("*! Attempting to parse unstable git command for changed files...")
+	}
+
+	for (line in gitDiff.toString().split("\n")) {
+		//println "** Git command line: $line"
+		// process files from git diff
+		try {
+			action = line.split()[0]
+			file = line.split()[1]
+			// handle deleted files
+			if (action == "D") {
+				deletedFiles.add(file)
+			}
+			// handle changed files
+			else {
+				changedFiles.add(file)
+			}
+		}
+		catch (Exception e) {
+			// no changes or unhandled format
+		}
+	}
+
+	return [changedFiles, deletedFiles]
+}
+
