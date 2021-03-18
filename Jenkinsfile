@@ -26,20 +26,6 @@ def ucdSite = 'ztecEnv'
 def ucdUri = 'https://10.3.20.233:8443/'
 
 
-pipeline {
-    agent any
-    parameters {
-        string(name: 'Greeting', defaultValue: 'Hello', description: 'How should I greet the world?')
-    }
-    stages {
-        stage('Example') {
-            steps {
-                echo "${params.Greeting} World!"
-            }
-        }
-    }
-}
-
 node (label: 'ztec-201-STC') {
 
     def workOutoutDir = "${WORKSPACE}/work"
