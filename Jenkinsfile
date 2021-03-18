@@ -1,7 +1,7 @@
 //Global vars
 
 // git
-def gitUrl = 'git@github.ibm.com:zDevOps-Acceleration/dbb-zappbuild.git'
+def gitUrl = 'git@github.ibm.com:dennis-behm/dbb-zappbuild-1.git'
 def gitCredId = 'drice-us'
 
 // application
@@ -79,7 +79,7 @@ node (label: 'ztec-201-STC') {
 	    }
 		
 	}
-
+/*
 	stage("Run IDZ Code Review") {
 	    sh "${groovyz} -Dlog4j.configurationFile=/var/dbb/config/log4j2.properties ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --properties /var/dbb/extensions/idz-codereview/codereview.properties"
 		
@@ -93,10 +93,10 @@ node (label: 'ztec-201-STC') {
 	    writeFile file: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml", text:crContent.trim()
 		junit allowEmptyResults: true, skipPublishingChecks: true, testResults: "BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml"
 	}
-	
+*/	
 	stage("Package") {
 //        sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig}"
-        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-dennis.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig}"
+        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-dennis.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --preview"
 
 		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
 	    archiveArtifacts allowEmptyArchive: true,
@@ -106,7 +106,7 @@ node (label: 'ztec-201-STC') {
 	    }
 		
 	}
-	
+	/*
 //	stage("Run Deployment") {
 //        sh "${groovyz} /var/dbb/integrations/ucd-deployment/UCDDeploy.groovy "
 //	}
@@ -140,5 +140,6 @@ node (label: 'ztec-201-STC') {
                // }
             //}
         }
+	*/ 
 	
 }
