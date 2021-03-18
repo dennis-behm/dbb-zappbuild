@@ -96,7 +96,7 @@ node (label: 'ztec-201-STC') {
 */	
 	stage("Package") {
 //        sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig}"
-        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-dennis.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --preview"
+        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-DAT.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --preview"
 
 		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
 	    archiveArtifacts allowEmptyArchive: true,
