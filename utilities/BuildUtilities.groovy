@@ -43,6 +43,22 @@ def createFullBuildList() {
 	return buildSet
 }
 
+def createFeatureBuildList() {
+	Set<String> buildSet = new HashSet<String>()
+	// create the list of build directories
+	List<String> srcDirs = []
+	if (props.applicationSrcDirs)
+		srcDirs.addAll(props.applicationSrcDirs.split(','))
+
+	srcDirs.each{ dir ->
+		dir = getAbsolutePath(dir)
+		buildSet.addAll(gitUtils.getModifiedFiles(dir,props.featureBuild))
+			//getFileSet(dir, true, '**/*.*', props.excludeFileList))
+	}
+
+	return buildSet
+}
+
 /*
  * getFileSet - create a list of files for a directory
  */
