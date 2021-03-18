@@ -156,10 +156,16 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 					changed.add(file)
 				}
 			}
+			
+			scmBuildRecords = gitUtils.getBuildConfiguration(dir, baseline, current )
+			scmBuildRecords.each{ buildRecord ->
+				BuildReportFactory.getBuildReport().addRecord(buildRecord)
+			}
 		}
 		else {
 			if (props.verbose) println "*! Directory $dir not a local Git repository. Skipping."
 		}
+
 
 		if (props.verbose) println "*** Changed files for directory $dir:"
 		changed.each { file ->
