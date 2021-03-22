@@ -268,8 +268,8 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 	Set<String> modifiedFiles = new HashSet<String>()
 	def changedFiles = []
 	def deletedFiles = []
-
-	
+	Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
+		
 	String cmd = "git -C $gitDir --no-pager log --oneline --merges --format=%H;%D;%s"
 	def git_log = new StringBuffer()
 	def git_error = new StringBuffer()
@@ -286,8 +286,6 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 		// process files from git diff
 		//println("Line: $line")
 		try {
-
-
 			attributes = line.split(";")
 			hash = attributes[0]
 			references = attributes[1]
@@ -311,6 +309,7 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 
 			if (msg.contains(featureBranchName)){
 				(changedFiles,deletedFiles) = getChangedFilesMergeCommit(gitDir, hash)
+				scmChangeHistory.put(hash,changedFiles)
 				changedFiles.each{ file ->
 					//println("!!! $hash --->  $file ")
 					modifiedFiles.add(file)
@@ -322,7 +321,7 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 		}
 	}
 
-	return modifiedFiles
+	return [scmChangeHistory, modifiedFiles]
 
 }
 

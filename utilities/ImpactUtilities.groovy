@@ -192,15 +192,28 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 
 def createFeatureBuildList() {
 	Set<String> buildSet = new HashSet<String>()
+
 	// create the list of build directories
 	List<String> srcDirs = []
 	if (props.applicationSrcDirs)
 		srcDirs.addAll(props.applicationSrcDirs.split(','))
 
-	srcDirs.each{ dir ->
-		dir = buildUtils.getAbsolutePath(dir)
-		Set<String> fileSet = gitUtils.getModifiedFiles(dir,props.featureBuild)
+	//
 
+	srcDirs.each{ srcDir ->
+		dir = buildUtils.getAbsolutePath(srcDir)
+		
+		// buildScope
+		Set<String> fileSet = new HashSet<String>()
+		// scmChangeHistory
+		Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
+		// Build Record
+		PropertiesRecord scmConfigration = new PropertiesRecord()
+
+		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
+		println scmChangeHistory
+		println fileSet
+		// buildFileSet
 		fileSet.each{ file ->
 
 			file = fixGitDiffPath(file, dir, true)
@@ -210,9 +223,14 @@ def createFeatureBuildList() {
 					buildSet.add(file)
 				}
 			}
-
-
 		}
+
+		//Store PropertyRecord
+		scmChangeHistory.each{entry ->  println "$entry.key: $entry.value" 
+			scmConfigration.addProperty(entry.key,entry.value.toString())
+		}
+
+		BuildReportFactory.getBuildReport().addRecord(scmConfigration)
 	}
 
 	return buildSet
