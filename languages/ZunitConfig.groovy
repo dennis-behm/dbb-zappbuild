@@ -165,7 +165,7 @@ buildUtils.createLanguageDatasets(langQualifier)
 	if ( jobRcStringArray.length > 1 ){
 		// Ok, the string can be splitted because it contains the keyword CC : Splitting by CC the second record contains the actual RC
 		rc = zUnitRunJCL.maxRC.split("CC")[1].toInteger()
-
+		
 		// manage processing the RC, up to your logic. You might want to flag the build as failed.
 		if (rc <= props.zunit_maxPassRC.toInteger()){
 			println   "***  zUnit Test Job ${zUnitRunJCL.submittedJobId} completed with $rc "

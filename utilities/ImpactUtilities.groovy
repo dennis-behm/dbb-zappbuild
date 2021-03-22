@@ -7,6 +7,9 @@ import java.nio.file.Path
 import java.nio.file.PathMatcher
 import groovy.json.JsonSlurper
 import groovy.transform.*
+import com.ibm.dbb.build.report.*
+import com.ibm.dbb.build.report.records.*
+
 
 // define script properties
 @Field BuildProperties props = BuildProperties.getInstance()
@@ -236,6 +239,52 @@ def scanOnlyStaticDependencies(List buildList, RepositoryClient repositoryClient
 			}
 		}
 	}
+}
+
+def createFeatureBuildList() {
+	Set<String> buildSet = new HashSet<String>()
+
+	// create the list of build directories
+	List<String> srcDirs = []
+	if (props.applicationSrcDirs)
+		srcDirs.addAll(props.applicationSrcDirs.split(','))
+
+	//
+
+	srcDirs.each{ srcDir ->
+		dir = buildUtils.getAbsolutePath(srcDir)
+		
+		// buildScope
+		Set<String> fileSet = new HashSet<String>()
+		// scmChangeHistory
+		Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
+		// Build Record with Merge Hashes
+		PropertiesRecord scmConfigration = new PropertiesRecord("scmConfig.${srcDir}")
+
+		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
+		println scmChangeHistory
+		println fileSet
+		// buildFileSet
+		fileSet.each{ file ->
+
+			file = fixGitDiffPath(file, dir, true)
+			if ( file != null ) {
+				if (ScriptMappings.getScriptName(file)) {
+					if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
+					buildSet.add(file)
+				}
+			}
+		}
+
+		//Store PropertyRecord
+		scmChangeHistory.each{entry ->  println "$entry.key: $entry.value" 
+			scmConfigration.addProperty(entry.key,entry.value.toString())
+		}
+
+		BuildReportFactory.getBuildReport().addRecord(scmConfigration)
+	}
+
+	return buildSet
 }
 
 def createImpactResolver(String changedFile, String rules, RepositoryClient repositoryClient) {

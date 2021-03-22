@@ -3,6 +3,9 @@ import com.ibm.dbb.repository.*
 import com.ibm.dbb.dependency.*
 import com.ibm.dbb.build.*
 import groovy.transform.*
+import com.ibm.dbb.build.report.*
+import com.ibm.dbb.build.report.records.*
+
 
 /*
  * Tests if directory is in a local git repository
@@ -278,5 +281,113 @@ def getCurrentChangedFiles(String gitDir, String currentHash, String verbose) {
 		deletedFiles,
 		renamedFiles
 	]
+}
+
+// Inspect git log to retrieve hash - file - tag mapping
+
+def getModifiedFiles(String gitDir, String featureBranchName) {
+	// git --no-pager log --oneline --merges
+	// git --no-pager log --oneline --merges 6780aab1d08d1f658479d01eb02ce88964822d1d...f741490479655b34f0ffd38b7371959241af0184
+	// 	f741490 (HEAD, tag: wi110.01, origin/master, refs/pipelines/694, refs/pipelines/693) Merge branch '5-wi110' into 'master'
+	// 	1b56a12 (tag: wi100.01, refs/pipelines/692) Merge branch '4-wi100' into 'master'
+
+	Set<String> modifiedFiles = new HashSet<String>()
+	def changedFiles = []
+	def deletedFiles = []
+	Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
+		
+	String cmd = "git -C $gitDir --no-pager log --oneline --merges --format=%H;%D;%s"
+	def git_log = new StringBuffer()
+	def git_error = new StringBuffer()
+
+	Process process = cmd.execute()
+	process.waitForProcessOutput(git_log, git_error)
+
+	// handle command error
+	if (git_error.size() > 0) {
+		println("*! Error executing Git command: $cmd error: $git_error")
+	}
+
+	for (line in git_log.toString().split("\n")) {
+		// process files from git diff
+		//println("Line: $line")
+		try {
+			attributes = line.split(";")
+			hash = attributes[0]
+			references = attributes[1]
+			msg = attributes[2]
+
+			//println("hash: $hash")
+			//println("ref : $references")
+			//println("msg : $msg")
+
+			// getTag
+			refs = references.split(",")
+			refs.each{ ref ->
+				if (ref.contains("tag:")){
+					def tag = ref.split("tag:")[1]
+					//println("! gittag : " + tag)
+				}
+			}
+
+			// hash
+			//println("! $hash")
+
+			if (msg.contains(featureBranchName)){
+				(changedFiles,deletedFiles) = getChangedFilesMergeCommit(gitDir, hash)
+				scmChangeHistory.put(hash,changedFiles)
+				changedFiles.each{ file ->
+					//println("!!! $hash --->  $file ")
+					modifiedFiles.add(file)
+				}
+			}
+		}
+		catch (Exception e) {
+			println e
+		}
+	}
+
+	return [scmChangeHistory, modifiedFiles]
+
+}
+
+def getChangedFilesMergeCommit(String gitDir, String hash) {
+	//println "** Running git command: git -C $gitDir show --first-parent --pretty=format: --name-status $hash"
+	String cmd = "git -C $gitDir show --first-parent --pretty=format: --name-status $hash"
+	def gitDiff = new StringBuffer()
+	def gitError = new StringBuffer()
+	Set<String> changedFiles = new HashSet<String>()
+	Set<String> deletedFiles = new HashSet<String>()
+
+	Process process = cmd.execute()
+	process.waitForProcessOutput(gitDiff, gitError)
+
+	// handle command error
+	if (gitError.size() > 0) {
+		println("*! Error executing Git command: $cmd error: $gitError")
+		println ("*! Attempting to parse unstable git command for changed files...")
+	}
+
+	for (line in gitDiff.toString().split("\n")) {
+		//println "** Git command line: $line"
+		// process files from git diff
+		try {
+			action = line.split()[0]
+			file = line.split()[1]
+			// handle deleted files
+			if (action == "D") {
+				deletedFiles.add(file)
+			}
+			// handle changed files
+			else {
+				changedFiles.add(file)
+			}
+		}
+		catch (Exception e) {
+			// no changes or unhandled format
+		}
+	}
+
+	return [changedFiles, deletedFiles]
 }
 
