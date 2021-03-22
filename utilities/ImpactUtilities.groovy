@@ -207,8 +207,8 @@ def createFeatureBuildList() {
 		Set<String> fileSet = new HashSet<String>()
 		// scmChangeHistory
 		Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
-		// Build Record
-		PropertiesRecord scmConfigration = new PropertiesRecord()
+		// Build Record with Merge Hashes
+		PropertiesRecord scmConfigration = new PropertiesRecord("scmConfig.${srcDir}")
 
 		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
 		println scmChangeHistory
