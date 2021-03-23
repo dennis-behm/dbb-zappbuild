@@ -29,7 +29,6 @@ def ucdUri = 'https://10.3.20.233:8443/'
 //properties([[$class: 'JiraProjectProperty'], parameters([string(defaultValue: 'impactBuild', description: 'Specify your feature', name: 'featureName', trim: false)])])
 //echo "received ${featureName}"
 
-/*
 properties([
     parameters([
         gitParameter(branch: '',
@@ -45,7 +44,6 @@ properties([
                      type: 'PT_BRANCH')
     ])
 ])
-*/
 
 //system
 def groovyz = '/usr/lpp/dbb/v1r0/bin/groovyz'
@@ -119,7 +117,7 @@ node (label: 'ztec-201-STC') {
 	    writeFile file: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml", text:crContent.trim()
 		junit allowEmptyResults: true, skipPublishingChecks: true, testResults: "BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml"
 	}
-	
+*/	
 	stage("Package") {
 //        sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig}"
         
@@ -141,7 +139,6 @@ node (label: 'ztec-201-STC') {
 			echo "Packaging skipped."
 		}
 	}
-	*/
 	/*
 //	stage("Run Deployment") {
 //        sh "${groovyz} /var/dbb/integrations/ucd-deployment/UCDDeploy.groovy "
