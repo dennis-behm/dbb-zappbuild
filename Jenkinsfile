@@ -14,13 +14,13 @@ def dbbGitBranch = 'master'
 
 // ucd configuration
 def ucdComponent = 'MortgageApplication'
-def artifactoryConfig = '/var/ucd/agent/conf/artifactrepository/MortgageApplication.artifactory.properties'
+def artifactoryConfig = '/var/ucd/agent/conf/artifactrepository/MortgageApplication2.artifactory.properties'
 def buztoolLocation = '/var/ucd/agent/bin/buztool.sh'
 
 // UCD
-def ucdApplication = 'MortgageApplication'
+def ucdApplication = 'MortgageApplicationV2'
 def ucdProcess = 'deploy'
-//def ucdComponent = 'MortgageApplication'
+def ucdComponent = 'MortgageApplication2'
 def ucdEnv = 'INT'
 def ucdSite = 'ztecEnv'
 def ucdUri = 'https://10.3.20.233:8443/'
@@ -121,7 +121,13 @@ node (label: 'ztec-201-STC') {
 */	
 	stage("Package") {
 //        sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig}"
-        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-DAT.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --preview"
+        
+        	if (params.BRANCH != 'master'){
+        	
+        	def startTime = new Date()
+		def formattedTime = startTime.format("yyyyMMdd.hhmmss.mmm")
+        
+        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-DAT.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --versionName ${params.BRANCH}_${BUILD_NUMBER}_${formattedTime} --prop ${artifactoryConfig} --preview"
 
 		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
 	    archiveArtifacts allowEmptyArchive: true,
@@ -129,7 +135,10 @@ node (label: 'ztec-201-STC') {
 											excludes: '*clist',
 											onlyIfSuccessful: false
 	    }
-		
+		}
+		else {
+			echo "Packaging skipped."
+		}
 	}
 	/*
 //	stage("Run Deployment") {
