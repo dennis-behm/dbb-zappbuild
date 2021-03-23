@@ -126,7 +126,7 @@ node (label: 'ztec-201-STC') {
         	def startTime = new Date()
 		def formattedTime = startTime.format("yyyyMMdd.hhmmss.mmm")
         
-        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-DAT.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --versionName ${params.BRANCH}_${BUILD_NUMBER}_${formattedTime} --prop ${artifactoryConfig} --preview"
+        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-DAT.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --versionName ${params.BRANCH}_${BUILD_NUMBER}_${formattedTime} --prop ${artifactoryConfig}"
 
 		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
 	    archiveArtifacts allowEmptyArchive: true,
