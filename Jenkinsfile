@@ -13,14 +13,13 @@ def dbbGitRepo = 'https://github.com/IBM/dbb'
 def dbbGitBranch = 'master'
 
 // ucd configuration
-def ucdComponent = 'MortgageApplication'
+def ucdComponent = 'MortgageApplication2'
 def artifactoryConfig = '/var/ucd/agent/conf/artifactrepository/MortgageApplication2.artifactory.properties'
 def buztoolLocation = '/var/ucd/agent/bin/buztool.sh'
 
 // UCD
 def ucdApplication = 'MortgageApplicationV2'
 def ucdProcess = 'deploy'
-def ucdComponent = 'MortgageApplication2'
 def ucdEnv = 'INT'
 def ucdSite = 'ztecEnv'
 def ucdUri = 'https://10.3.20.233:8443/'
