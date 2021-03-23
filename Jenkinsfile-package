@@ -61,10 +61,13 @@ node (label: 'ztec-201-STC') {
 
 	stage('Git Checkout') {
 		dir (zAppBuild) {
+		
+			checkout([$class: 'GitSCM', branches: [[name: GitBranch]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
+		
 			scmVars = checkout([$class: 'GitSCM', branches: [[name: env.BRANCH_NAME]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
-			env.GIT_COMMIT = scmVars.GIT_COMMIT
-    			env.DATASET_BRANCH = env.BRANCH_NAME.take(8).toUpperCase()
-    			env.COLLECTION_BRANCH = env.BRANCH_NAME.capitalize()
+			//env.GIT_COMMIT = scmVars.GIT_COMMIT
+    			//env.DATASET_BRANCH = env.BRANCH_NAME.take(8).toUpperCase()
+    			//env.COLLECTION_BRANCH = env.BRANCH_NAME.capitalize()
 			
 		}
 		
