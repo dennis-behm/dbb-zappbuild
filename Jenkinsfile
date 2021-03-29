@@ -88,11 +88,11 @@ node (label: 'ztec-201-STC') {
 
 	stage("Build") {
 	    //sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --reset --verbose"
-		if (params.BRANCH == 'master'){
+		//if (params.BRANCH == 'master'){
 			sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --impactBuild --verbose"
-		} else {
-	    		sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild ${params.BRANCH} --verbose"
-		}
+	//	} else {
+	  //  		sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN.$DATASET_BRANCH --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild ${params.BRANCH} --verbose"
+		//}
 	    //calculating the Buildoutput folder name
 	
 	    BUILD_OUTPUT_FOLDER = sh (script: "ls ${WORKSPACE}/BUILD-${BUILD_NUMBER}", returnStdout: true).trim()
