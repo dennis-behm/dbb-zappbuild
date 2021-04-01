@@ -3,11 +3,11 @@ EPSMLIS  DFHMSD TYPE=&SYSPARM,MODE=INOUT,LANG=COBOL,                   X
                STORAGE=AUTO,TIOAPFX=YES,DSATTS=(COLOR,HILIGHT),        X 0009000
                MAPATTS=(COLOR,HILIGHT)                                   0009100
 EPSMLIS  DFHMDI SIZE=(24,80),CTRL=(PRINT,FREEKB)                         0011000
-         DFHMDF POS=(1,24),LENGTH=26,INITIAL='Better Mortgage Rates',  *
+         DFHMDF POS=(1,24),LENGTH=26,INITIAL='Best Mortgage Rate!',    *
                ATTRB=(ASKIP,BRT)
          DFHMDF POS=(24,58),LENGTH=0,                                  *
                ATTRB=ASKIP
-*        MENU MORTGAGE LIST.
+*        MENU  MORTGAGE LIST.
 
 LITCOMP  DFHMDF POS=(3,1),LENGTH=24,INITIAL='Company',                 *
                ATTRB=(ASKIP,NORM)

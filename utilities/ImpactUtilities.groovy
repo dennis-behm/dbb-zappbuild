@@ -58,7 +58,14 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 	// scan files and update source collection for impact analysis
 	updateCollection(changedFiles, deletedFiles, renamedFiles, repositoryClient)
 
+	// perform impactAnalysis
+	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
 
+	return [buildSet, deletedFiles]
+}
+
+def performImpactAnalysis(Set<String> changedFiles, RepositoryClient repositoryClient){
+	
 	// create build list using impact analysis
 	Set<String> buildSet = new HashSet<String>()
 	changedFiles.each { changedFile, gitHash ->
@@ -212,6 +219,55 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 		deletedFiles,
 		renamedFiles
 	]
+}
+
+// with impacts
+def createFeatureBuildList(RepositoryClient repositoryClient) {
+	Set<String> changedFiles = new HashSet<String>()
+
+	// create the list of build directories
+	List<String> srcDirs = []
+	if (props.applicationSrcDirs)
+		srcDirs.addAll(props.applicationSrcDirs.split(','))
+
+	//
+	srcDirs.each{ srcDir ->
+		dir = buildUtils.getAbsolutePath(srcDir)
+		
+		// buildScope
+		Set<String> fileSet = new HashSet<String>()
+		// scmChangeHistory
+		Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
+		// Build Record with Merge Hashes
+		PropertiesRecord scmConfigration = new PropertiesRecord("scmConfig.${srcDir}")
+
+		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
+		println "###001" + scmChangeHistory
+		println "###002" + fileSet
+		// buildFileSet
+		fileSet.each{ file ->
+
+			file = fixGitDiffPath(file, dir, true)
+			if ( file != null ) {
+		//		if (ScriptMappings.getScriptName(file)) {
+		//			if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
+					changedFiles.add(file)
+		//		}
+			}
+		}
+
+		//Store PropertyRecord
+		scmChangeHistory.each{entry ->  println "$entry.key: $entry.value" 
+			scmConfigration.addProperty(entry.key,entry.value.toString())
+		}
+
+		BuildReportFactory.getBuildReport().addRecord(scmConfigration)
+	}
+	
+	// perform impactAnalysis on changedFile for Feature
+	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
+	println "###003" + buildSet
+	return buildSet
 }
 
 def createImpactResolver(String changedFile, String rules, RepositoryClient repositoryClient) {
