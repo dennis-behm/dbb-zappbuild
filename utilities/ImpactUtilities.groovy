@@ -219,7 +219,7 @@ def createFeatureBuildList(RepositoryClient repositoryClient) {
 
 		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
 		println "###001" + scmChangeHistory
-		println "###002" + println fileSet
+		println "###002" + fileSet
 		// buildFileSet
 		fileSet.each{ file ->
 
