@@ -22,13 +22,14 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 	// local variables
 	Set<String> changedFiles = new HashSet<String>()
 	Set<String> deletedFiles = new HashSet<String>()
+	Set<String> renamedFiles = new HashSet<String>()
 
 	// get the last build result to get the baseline hashes
 	def lastBuildResult = repositoryClient.getLastBuildResult(props.applicationBuildGroup, BuildResult.COMPLETE, BuildResult.CLEAN)
 
 	// calculate changed files
 	if (lastBuildResult) {
-		(changedFiles, deletedFiles) = calculateChangedFiles(lastBuildResult)
+		(changedFiles, deletedFiles, renamedFiles) = calculateChangedFiles(lastBuildResult)
 	}
 	else if (props.topicBranchBuild) {
 		// if this is the first topic branch build get the main branch build result
@@ -50,7 +51,7 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 
 
 	// scan files and update source collection for impact analysis
-	updateCollection(changedFiles, deletedFiles, repositoryClient)
+	updateCollection(changedFiles, deletedFiles, renamedFiles, repositoryClient)
 
 	// perform impactAnalysis
 	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
@@ -113,6 +114,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 	Map<String,String> baselineHashes = new HashMap<String,String>()
 	Set<String> changedFiles = new HashSet<String>()
 	Set<String> deletedFiles = new HashSet<String>()
+	Set<String> renamedFiles = new HashSet<String>()
 
 	// create a list of source directories to search
 	List<String> directories = []
@@ -149,6 +151,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 		if (props.verbose) println "** Calculating changed files for directory $dir"
 		def changed = []
 		def deleted = []
+		def renamed = []
 		String baseline = baselineHashes.get(buildUtils.relativizePath(dir))
 		String current = currentHashes.get(buildUtils.relativizePath(dir))
 		if (!baseline || !current) {
@@ -156,45 +159,93 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 		}
 		else if (gitUtils.isGitDir(dir)) {
 			if (props.verbose) println "** Diffing baseline $baseline -> current $current"
-			def _changed = []
-			(_changed, deleted) = gitUtils.getChangedFiles(dir, baseline, current )
-			List<PathMatcher> excludeMatchers = createPathMatcherPattern(props.excludeFileList)
+			(changed, deleted, renamed) = gitUtils.getChangedFiles(dir, baseline, current )
 
-			// make sure file is not an excluded file
-			_changed.each { file ->
-				if ( !matches(file, excludeMatchers)) {
-					changed.add(file)
-				}
-			}
-
-			/*	scmBuildRecords = gitUtils.getBuildConfiguration(dir, baseline, current )
-			 scmBuildRecords.each{ buildRecord ->
-			 BuildReportFactory.getBuildReport().addRecord(buildRecord)
-			 } */
 		}
 		else {
 			if (props.verbose) println "*! Directory $dir not a local Git repository. Skipping."
 		}
 
+		// Understand repository setup for offsets
+		def mode = null
+
+		// make sure file is not an excluded file
+		List<PathMatcher> excludeMatchers = createPathMatcherPattern(props.excludeFileList)
 
 		if (props.verbose) println "*** Changed files for directory $dir:"
 		changed.each { file ->
-			file = fixGitDiffPath(file, dir, true)
-			if ( file != null ) {
-				changedFiles << file
-				if (props.verbose) println "*** $file"
+			if ( !matches(file, excludeMatchers)) {
+				(file, mode) = fixGitDiffPath(file, dir, true, null)
+				if ( file != null ) {
+					changedFiles << file
+					if (props.verbose) println "**** $file"
+				}
 			}
 		}
 
 		if (props.verbose) println "*** Deleted files for directory $dir:"
 		deleted.each { file ->
-			file = fixGitDiffPath(file, dir, false)
-			deletedFiles << file
-			if (props.verbose) println "*** $file"
+			if ( !matches(file, excludeMatchers)) {
+				file = fixGitDiffPath(file, dir, false, mode)
+				deletedFiles << file
+				if (props.verbose) println "**** $file"
+			}
+		}
+
+		if (props.verbose) println "*** Renamed files for directory $dir:"
+		renamed.each { file ->
+			if ( !matches(file, excludeMatchers)) {
+				file = fixGitDiffPath(file, dir, false, mode)
+				renamedFiles << file
+				if (props.verbose) println "**** $file"
+			}
 		}
 	}
 
-	return [changedFiles, deletedFiles]
+	return [
+		changedFiles,
+		deletedFiles,
+		renamedFiles
+	]
+}
+
+/*
+ * Method to populate the output collection in a scanOnly + scanLoadmodules build scenario.
+ * Scenario: Migrate Source to Git and scan against existing set of loadmodules.
+ * Limitation: Sample for cobol
+ */
+def scanOnlyStaticDependencies(List buildList, RepositoryClient repositoryClient){
+	buildList.each { buildFile ->
+		def scriptMapping = ScriptMappings.getScriptName(buildFile)
+		if(scriptMapping != null){
+			langPrefix = buildUtils.getLangPrefix(scriptMapping)
+			if(langPrefix != null){
+				String isLinkEdited = props.getFileProperty("${langPrefix}_linkEdit", buildFile)
+
+				def scanner = buildUtils.getScanner(buildFile)
+				LogicalFile logicalFile = scanner.scan(buildFile, props.workspace)
+				
+				String member = CopyToPDS.createMemberName(buildFile)
+				String loadPDSMember = props."${langPrefix}_loadPDS"+"($member)"
+
+				if ((isLinkEdited && isLinkEdited.toBoolean()) || scriptMapping == "LinkEdit.groovy"){
+					try{
+						if (props.verbose) println ("*** Scanning load module $loadPDSMember of $buildFile")
+						saveStaticLinkDependencies(buildFile, props."${langPrefix}_loadPDS", logicalFile, repositoryClient)
+					}
+					catch (com.ibm.dbb.build.ValidationException e){
+						println ("!* Error scanning output file for $buildFile  : $loadPDSMember")
+						println e
+					}
+				}
+				else {
+					if (props.verbose) println ("*** Skipped scanning module $loadPDSMember of $buildFile.")
+				}
+			} else {
+				if (props.verbose) println ("*** Skipped scanning outputs of $buildFile. No language prefix found.")
+			}
+		}
+	}
 }
 
 // with impacts
@@ -261,13 +312,13 @@ def createImpactResolver(String changedFile, String rules, RepositoryClient repo
 	return resolver
 }
 
-def updateCollection(changedFiles, deletedFiles, RepositoryClient repositoryClient) {
+def updateCollection(changedFiles, deletedFiles, renamedFiles, RepositoryClient repositoryClient) {
 	if (!repositoryClient) {
 		if (props.verbose) println "** Unable to update collections. No repository client."
 		return
 	}
 
-	if (props.verbose) println "** Updating collection ${props.applicationCollectionName}"
+	if (props.verbose) println "** Updating collections ${props.applicationCollectionName} and ${props.applicationOutputsCollectionName}"
 	//def scanner = new DependencyScanner()
 	List<LogicalFile> logicalFiles = new ArrayList<LogicalFile>()
 	List<PathMatcher> excludeMatchers = createPathMatcherPattern(props.excludeFileList)
@@ -278,7 +329,18 @@ def updateCollection(changedFiles, deletedFiles, RepositoryClient repositoryClie
 	deletedFiles.each { file ->
 		// files in a collection are stored as relative paths from a source directory
 		if (props.verbose) println "*** Deleting logical file for $file"
-		repositoryClient.deleteLogicalFile(props.applicationCollectionName, buildUtils.relativizePath(file))
+		logicalFile = buildUtils.relativizePath(file)
+		repositoryClient.deleteLogicalFile(props.applicationCollectionName, logicalFile)
+		repositoryClient.deleteLogicalFile(props.applicationOutputsCollectionName, logicalFile)
+	}
+
+	// remove renamed files from collection
+	renamedFiles.each { file ->
+		// files in a collection are stored as relative paths from a source directory
+		if (props.verbose) println "*** Deleting renamed logical file for $file"
+		logicalFile = buildUtils.relativizePath(file)
+		repositoryClient.deleteLogicalFile(props.applicationCollectionName, logicalFile)
+		repositoryClient.deleteLogicalFile(props.applicationOutputsCollectionName, logicalFile)
 	}
 
 	// scan changed files
@@ -399,36 +461,56 @@ def verifyCollections(RepositoryClient repositoryClient) {
 
 /* 
  *  calculates the correct filepath from the git diff, due to different offsets in the directory path
- *  like nested projects, projects at root level
+ *  like nested projects, projects at root level, no root folder
  *  
  *  returns null if file not found + mustExist
+ *  
+ *  scenarios / mode
+ *  1 - Application projects are nested (e.q Mortgage in zAppBuild), Projects on Rootlevel
+ *  2 - Repository name is used as Application Root dir
+ *  3 - $dir is not the root directory of the file
  *
  */
 
-def fixGitDiffPath(String file, String dir, boolean mustExist ) {
-	// relativized within the repository
+def fixGitDiffPath(String file, String dir, boolean mustExist, mode) {
+
+	// default value, relevant for non-existent files (like deletions)
+	String defaultValue
+
+	// Scenario 1: Nested projects, like MortgageApplication and projects with a top-level dir
 	String relPath = new File(props.workspace).toURI().relativize(new File((dir).trim()).toURI()).getPath()
-
-	// substring from identified common path element
 	String fixedFileName= file.indexOf(relPath) >= 0 ? file.substring(file.indexOf(relPath)) : file
+	defaultValue = fixedFileName
 
-	if (props.verbose) println ("** Testing if fixed file path exists : " + fixedFileName)
 	if ( new File("${props.workspace}/${fixedFileName}").exists())
-		return fixedFileName;
+		return [fixedFileName, 1];
+	if (mode==1 && !mustExist) return fixedFileName
 
-	// Scenario: Repository name is used as Application Root directory
+	// Scenario 2: Repository name is used as Application Root directory
 	String dirName = new File(dir).getName()
 	if (new File("${dir}/${file}").exists())
-		return "$dirName/$file" as String
+		return [
+			"$dirName/$file" as String,
+			2
+		]
+	if (mode==2 && !mustExist) return "$dirName/$file" as String
 
-	// Scenario: Directory ${dir} is not the root directory of the file
+	// Scenario 3: Directory ${dir} is not the root directory of the file
 	// Example :
 	//   - applicationSrcDirs=nazare-demo-genapp/base/src/cobol,nazare-demo-genapp/base/src/bms
 	fixedFileName = buildUtils.relativizePath(dir) + ( file.indexOf ("/") >= 0 ? file.substring(file.lastIndexOf("/")) : file )
 	if ( new File("${props.workspace}/${fixedFileName}").exists())
-		return fixedFileName;
+		return [fixedFileName, 3];
+	if (mode==3 && !mustExist) return fixedFileName
+
 	// returns null or assumed fullPath to file
-	return mustExist ? null : "${props.workspace}/${fixedFileName}"
+	if (mustExist){
+		if (props.verbose) println "!! (fixGitDiffPath) File not found."
+		return [null]
+	}
+
+	if (props.verbose) println "!! (fixGitDiffPath) Mode could not be determined. Returning default."
+	return [defaultValue]
 }
 
 def matches(String file, List<PathMatcher> pathMatchers) {

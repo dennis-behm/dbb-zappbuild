@@ -71,7 +71,7 @@ def getCurrentGitDetachedBranch(String gitDir) {
 	def gitBranchArr = gitBranchString.split(',')
 	def solution = ""
 	for (i = 0; i < gitBranchArr.length; i++) {
-		if (gitBranchArr[i].contains("/")) {
+		if (gitBranchArr[i].contains("origin/")) {
 			solution = gitBranchArr[i].replaceAll(".*?/", "").trim()
 		}
 	}
@@ -185,6 +185,7 @@ def getChangedFiles(String gitDir, String baseHash, String currentHash) {
 	def git_error = new StringBuffer()
 	def changedFiles = []
 	def deletedFiles = []
+	def renamedFiles = []
 
 	def process = cmd.execute()
 	process.waitForProcessOutput(git_diff, git_error)
@@ -198,15 +199,23 @@ def getChangedFiles(String gitDir, String baseHash, String currentHash) {
 	for (line in git_diff.toString().split("\n")) {
 		// process files from git diff
 		try {
-			action = line.split()[0]
-			file = line.split()[1]
-			// handle deleted files
-			if (action == "D") {
-				deletedFiles.add(file)
-			}
-			// handle changed files
-			else {
+			gitDiffOutput = line.split()
+			action = gitDiffOutput[0]
+			file = gitDiffOutput[1]
+			
+			if (action == "M" || action == "A") { // handle changed and new added files
 				changedFiles.add(file)
+			} else if (action == "D") {// handle deleted files
+				deletedFiles.add(file)
+			} else if (action == "R100") { // handle renamed file
+				renamedFile = gitDiffOutput[1]
+				newFileName = gitDiffOutput[2]
+				changedFiles.add(newFileName) // will rebuild file
+				renamedFiles.add(renamedFile)
+			}
+			else {
+				println ("*! (GitUtils.getChangedFiles) Error in determining action in git diff. ")
+				println ("*! (GitUtils.getChangedFiles) Git diff output: $line. ")
 			}
 		}
 		catch (Exception e) {
@@ -214,7 +223,11 @@ def getChangedFiles(String gitDir, String baseHash, String currentHash) {
 		}
 	}
 
-	return [changedFiles, deletedFiles]
+	return [
+		changedFiles,
+		deletedFiles,
+		renamedFiles
+	]
 }
 
 def getCurrentChangedFiles(String gitDir, String currentHash, String verbose) {
@@ -224,6 +237,7 @@ def getCurrentChangedFiles(String gitDir, String currentHash, String verbose) {
 	def gitError = new StringBuffer()
 	def changedFiles = []
 	def deletedFiles = []
+	def renamedFiles = []
 
 	Process process = cmd.execute()
 	process.waitForProcessOutput(gitDiff, gitError)
@@ -238,15 +252,23 @@ def getCurrentChangedFiles(String gitDir, String currentHash, String verbose) {
 		if (verbose) println "** Git command line: $line"
 		// process files from git diff
 		try {
-			action = line.split()[0]
-			file = line.split()[1]
-			// handle deleted files
-			if (action == "D") {
-				deletedFiles.add(file)
-			}
-			// handle changed files
-			else {
+			gitDiffOutput = line.split()
+			action = gitDiffOutput[0]
+			file = gitDiffOutput[1]
+			
+			if (action == "M" || action == "A") { // handle changed and new added files
 				changedFiles.add(file)
+			} else if (action == "D") {// handle deleted files
+				deletedFiles.add(file)
+			} else if (action == "R100") { // handle renamed file
+				renamedFile = gitDiffOutput[1]
+				newFileName = gitDiffOutput[2]
+				changedFiles.add(newFileName) // will rebuild file
+				renamedFiles.add(renamedFile)
+			}
+			else {
+				println ("*! (GitUtils.getChangedFiles) Error in determining action in git diff. ")
+				println ("*! (GitUtils.getChangedFiles) Git diff output: $line. ")
 			}
 		}
 		catch (Exception e) {
@@ -254,7 +276,11 @@ def getCurrentChangedFiles(String gitDir, String currentHash, String verbose) {
 		}
 	}
 
-	return [changedFiles, deletedFiles]
+	return [
+		changedFiles,
+		deletedFiles,
+		renamedFiles
+	]
 }
 
 // Inspect git log to retrieve hash - file - tag mapping

@@ -1,12 +1,12 @@
        ID DIVISION.
        PROGRAM-ID. EPSCMORT.
-      *    THIS DEMONSTRATES CICS/DEBUG           - EPSDEMOS 2022
-      * * * * HERE
+      *    THIS DEMONSTRATES CICS/DEBUG           - EPSDEMOS 2008
+      *
       *    THIS PROGRAM WILL RECEIVE A DATE AND COVERT THE DATE TO
       *    AN INTEGER IN A CALLED PROGRAM TO DETERMINE DAYS FROM
       *    CURRENT DATE.
-      * *
-      *    (C) 2022 IBM - JIM HILDNER RESERVED.
+      *
+      *    (C) 2017 IBM - JIM HILDNER RESERVED.
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
        SOURCE-COMPUTER. IBM-FLEX-ES.
@@ -35,7 +35,7 @@
                                PIC 9(10)V99.
 
        01 W-CALL-PROGRAM                      PIC X(8).
-      * abc
+      *
        01 W-RETIREMENT-WA                     PIC 9(4).
        01 W-COMAREA-LENGTH                    PIC 9(4) COMP.
 
