@@ -379,7 +379,7 @@ def createBuildList() {
 	// check if full build
 	if (props.featureBuild) {
 		println "** --featureBuild option selected. $action all programs for feature ${props.featureBuild} application ${props.application} "
-		buildSet = impactUtils.createFeatureBuildList()	
+		buildSet = impactUtils.createFeatureBuildList(repositoryClient)	
 	}
 	
 	// check if impact build

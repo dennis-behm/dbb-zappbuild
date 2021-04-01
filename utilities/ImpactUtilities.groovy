@@ -53,12 +53,12 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 	updateCollection(changedFiles, deletedFiles, repositoryClient)
 
 	// perform impactAnalysis
-	Set<String> buildSet = performImpactAnalysis(changedFiles)
+	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
 
 	return [buildSet, deletedFiles]
 }
 
-def performImpactAnalysis(Set<String> changedFiles){
+def performImpactAnalysis(Set<String> changedFiles, RepositoryClient repositoryClient){
 	
 	// create build list using impact analysis
 	Set<String> buildSet = new HashSet<String>()
@@ -198,7 +198,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 }
 
 // with impacts
-def createFeatureBuildList() {
+def createFeatureBuildList(RepositoryClient repositoryClient) {
 	Set<String> changedFiles = new HashSet<String>()
 
 	// create the list of build directories
@@ -241,7 +241,7 @@ def createFeatureBuildList() {
 	}
 	
 	// perform impactAnalysis on changedFile for Feature
-	Set<String> buildSet = performImpactAnalysis(changedFiles)
+	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
 
 	return buildSet
 }
