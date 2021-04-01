@@ -52,7 +52,14 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 	// scan files and update source collection for impact analysis
 	updateCollection(changedFiles, deletedFiles, repositoryClient)
 
+	// perform impactAnalysis
+	Set<String> buildSet = performImpactAnalysis(changedFiles)
 
+	return [buildSet, deletedFiles]
+}
+
+def performImpactAnalysis(Set<String> changedFiles){
+	
 	// create build list using impact analysis
 	Set<String> buildSet = new HashSet<String>()
 	changedFiles.each { changedFile ->
@@ -95,8 +102,8 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 			if (props.verbose) println "** Impact analysis for $changedFile has been skipped due to configuration."
 		}
 	}
-
-	return [buildSet, deletedFiles]
+	
+	return buildSet
 }
 
 
@@ -190,8 +197,9 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 	return [changedFiles, deletedFiles]
 }
 
+// with impacts
 def createFeatureBuildList() {
-	Set<String> buildSet = new HashSet<String>()
+	Set<String> changedFiles = new HashSet<String>()
 
 	// create the list of build directories
 	List<String> srcDirs = []
@@ -199,7 +207,6 @@ def createFeatureBuildList() {
 		srcDirs.addAll(props.applicationSrcDirs.split(','))
 
 	//
-
 	srcDirs.each{ srcDir ->
 		dir = buildUtils.getAbsolutePath(srcDir)
 		
@@ -220,7 +227,7 @@ def createFeatureBuildList() {
 			if ( file != null ) {
 				if (ScriptMappings.getScriptName(file)) {
 					if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
-					buildSet.add(file)
+					changedFiles.add(file)
 				}
 			}
 		}
@@ -232,6 +239,9 @@ def createFeatureBuildList() {
 
 		BuildReportFactory.getBuildReport().addRecord(scmConfigration)
 	}
+	
+	// perform impactAnalysis on changedFile for Feature
+	Set<String> buildSet = performImpactAnalysis(changedFiles)
 
 	return buildSet
 }
