@@ -218,17 +218,17 @@ def createFeatureBuildList(RepositoryClient repositoryClient) {
 		PropertiesRecord scmConfigration = new PropertiesRecord("scmConfig.${srcDir}")
 
 		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
-		println scmChangeHistory
-		println fileSet
+		println "###001" + scmChangeHistory
+		println "###002" + println fileSet
 		// buildFileSet
 		fileSet.each{ file ->
 
 			file = fixGitDiffPath(file, dir, true)
 			if ( file != null ) {
-				if (ScriptMappings.getScriptName(file)) {
-					if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
+		//		if (ScriptMappings.getScriptName(file)) {
+		//			if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
 					changedFiles.add(file)
-				}
+		//		}
 			}
 		}
 
@@ -242,7 +242,7 @@ def createFeatureBuildList(RepositoryClient repositoryClient) {
 	
 	// perform impactAnalysis on changedFile for Feature
 	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
-
+	println "###003" + buildSet
 	return buildSet
 }
 
