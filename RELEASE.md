@@ -52,7 +52,7 @@ Adding support for the IBM IDZ zUnit testing framework along with the zDynamic T
 
 
 ## 2020-06-12
-move build data set creation to language scripts [](https://github.com/IBM/dbb-zappbuild/commit/be82dbf6db933ec87813628d20b743da8e054599)
+Move build data set creation to language scripts [](https://github.com/IBM/dbb-zappbuild/commit/be82dbf6db933ec87813628d20b743da8e054599)
 
 ## 2020-02-27
 initial project share at https://github.com/ibm/dbb-zappbuild 
