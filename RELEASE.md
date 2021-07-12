@@ -2,6 +2,11 @@
 
 This is a collection of notable capabilities which were added into zAppBuild since it was made available in February 2020 within this repository.
 
+## 2021-07-01 
+REXX language script [116](https://github.com/IBM/dbb-zappbuild/pull/116)
+
+## 2021-06-11
+Ability to perform impactBuilds when a application build property is changed [110](https://github.com/IBM/dbb-zappbuild/pull/110)
 
 ## 2021-05-25
 Manage the creation of the build output subfolder as a build property [109](https://github.com/IBM/dbb-zappbuild/pull/109)
