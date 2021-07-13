@@ -22,6 +22,11 @@ buildUtils.createLanguageDatasets(langQualifier)
 // sort the build list based on build file rank if provided
 List<String> sortedList = buildUtils.sortBuildList(argMap.buildList, 'bms_fileBuildRank')
 
+println "xxxxxxx"
+println props.getProperty("dbb.command.reportOnly")
+props.setProperty("dbb.command.reportOnly","true")
+println props.getProperty("dbb.command.reportOnly")
+
 // iterate through build list
 sortedList.each { buildFile ->
 	println "*** Building file $buildFile"
@@ -54,6 +59,11 @@ sortedList.each { buildFile ->
 	 }
 	
 }
+
+println "xxxxxxx"
+println props.getProperty("dbb.command.reportOnly")
+props.setProperty("dbb.command.reportOnly","true")
+println props.getProperty("dbb.command.reportOnly")
 
 // end script
 
