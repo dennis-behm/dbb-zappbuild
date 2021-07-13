@@ -62,7 +62,7 @@ sortedList.each { buildFile ->
 
 println "xxxxxxx"
 println props.getProperty("dbb.command.reportOnly")
-props.setProperty("dbb.command.reportOnly","true")
+props.setProperty("dbb.command.reportOnly","false")
 println props.getProperty("dbb.command.reportOnly")
 
 // end script
