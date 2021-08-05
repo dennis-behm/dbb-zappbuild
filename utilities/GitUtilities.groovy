@@ -296,7 +296,7 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 	def deletedFiles = []
 	Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
 		
-	String cmd = "git -C $gitDir --no-pager log --oneline --merges --format=%H;%D;%s"
+	String cmd = "git -C $gitDir --no-pager log --date=raw --oneline --merges --format=%ad;%H;%D;%s"
 	def git_log = new StringBuffer()
 	def git_error = new StringBuffer()
 
@@ -307,15 +307,20 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 	if (git_error.size() > 0) {
 		println("*! Error executing Git command: $cmd error: $git_error")
 	}
+	
+	// Init BuildRecord
+	def buildReport = BuildReportFactory.getBuildReport()
+	PropertiesRecord featureBuildRecord = new PropertiesRecord("DBB.FeatureBuildInfo")
 
 	for (line in git_log.toString().split("\n")) {
 		// process files from git diff
 		//println("Line: $line")
 		try {
 			attributes = line.split(";")
-			hash = attributes[0]
-			references = attributes[1]
-			msg = attributes[2]
+			timestamp = attributes[0]
+			hash = attributes[1]
+			references = attributes[2]
+			msg = attributes[3]
 
 			//println("hash: $hash")
 			//println("ref : $references")
@@ -332,20 +337,26 @@ def getModifiedFiles(String gitDir, String featureBranchName) {
 
 			// hash
 			//println("! $hash")
+			
 
 			if (msg.contains(featureBranchName)){
 				(changedFiles,deletedFiles) = getChangedFilesMergeCommit(gitDir, hash)
+				featureBuildRecord.addProperty(timestamp, "$hash +++ $msg +++ $changedFiles")
+				
 				scmChangeHistory.put(hash,changedFiles)
 				changedFiles.each{ file ->
 					//println("!!! $hash --->  $file ")
 					modifiedFiles.add(file)
 				}
 			}
+			
 		}
 		catch (Exception e) {
 			println e
 		}
 	}
+	
+	if(featureBuildRecord.getProperties().size()!=0) buildReport.addRecord(featureBuildRecord)
 
 	return [scmChangeHistory, modifiedFiles]
 
@@ -391,3 +402,27 @@ def getChangedFilesMergeCommit(String gitDir, String hash) {
 	return [changedFiles, deletedFiles]
 }
 
+def getChangedProperties(String gitDir, String baseline, String currentHash, String propertiesFile) {
+	String cmd = "git -C $gitDir diff --ignore-all-space --no-prefix -U0 $baseline $currentHash $propertiesFile"
+
+	def gitDiff = new StringBuffer()
+	def gitError = new StringBuffer()
+	Properties changedProperties = new Properties()
+
+	Process process = cmd.execute()
+	process.waitForProcessOutput(gitDiff, gitError)
+
+	for (line in gitDiff.toString().split("\n")) {
+		if (line.startsWith("+") && line.contains("=")){
+			try {
+				gitDiffOutput = line.substring(1)
+				changedProperties.load(new StringReader(gitDiffOutput));
+			}
+			catch (Exception e) {
+				// no changes or unhandled format
+			}
+		}
+	}
+	
+	return changedProperties.propertyNames()
+}

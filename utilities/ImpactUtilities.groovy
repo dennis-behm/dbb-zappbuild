@@ -10,7 +10,6 @@ import groovy.transform.*
 import com.ibm.dbb.build.report.*
 import com.ibm.dbb.build.report.records.*
 
-
 // define script properties
 @Field BuildProperties props = BuildProperties.getInstance()
 @Field def gitUtils= loadScript(new File("GitUtilities.groovy"))
@@ -23,13 +22,14 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 	Set<String> changedFiles = new HashSet<String>()
 	Set<String> deletedFiles = new HashSet<String>()
 	Set<String> renamedFiles = new HashSet<String>()
-
+	Set<String> changedBuildProperties = new HashSet<String>()
+	
 	// get the last build result to get the baseline hashes
 	def lastBuildResult = repositoryClient.getLastBuildResult(props.applicationBuildGroup, BuildResult.COMPLETE, BuildResult.CLEAN)
 
 	// calculate changed files
 	if (lastBuildResult) {
-		(changedFiles, deletedFiles, renamedFiles) = calculateChangedFiles(lastBuildResult)
+		(changedFiles, deletedFiles, renamedFiles, changedBuildProperties) = calculateChangedFiles(lastBuildResult)
 	}
 	else if (props.topicBranchBuild) {
 		// if this is the first topic branch build get the main branch build result
@@ -37,7 +37,7 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 		String mainBranchBuildGroup = "${props.application}-${props.mainBuildBranch}"
 		lastBuildResult = repositoryClient.getLastBuildResult(mainBranchBuildGroup, BuildResult.COMPLETE, BuildResult.CLEAN)
 		if (lastBuildResult) {
-			(changedFiles, deletedFiles) = calculateChangedFiles(lastBuildResult)
+			(changedFiles, deletedFiles, renamedFiles, changedBuildProperties) = calculateChangedFiles(lastBuildResult)
 		}
 		else {
 			println "*! No previous topic branch build result or main branch build result exists. Cannot calculate file changes."
@@ -54,17 +54,25 @@ def createImpactBuildList(RepositoryClient repositoryClient) {
 	updateCollection(changedFiles, deletedFiles, renamedFiles, repositoryClient)
 
 	// perform impactAnalysis
-	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
+	Set<String> buildSet = performImpactAnalysis(changedFiles, changedBuildProperties, repositoryClient)
 
 	return [buildSet, deletedFiles]
 }
 
-def performImpactAnalysis(Set<String> changedFiles, RepositoryClient repositoryClient){
+def performImpactAnalysis(Set<String> changedFiles, Set<String> 	changedBuildProperties, RepositoryClient repositoryClient){
+	
+	PropertiesRecord gitBuildSetBuildReportRecord = new PropertiesRecord()
+	gitBuildSetBuildReportRecord.addProperty("buildSet","")
+	
+	PropertiesRecord gitDeletedInfoBuildReportRecord = new PropertiesRecord()
+	gitDeletedInfoBuildReportRecord.addProperty("deletedFiles","")
 	
 	// create build list using impact analysis
 	Set<String> buildSet = new HashSet<String>()
 	changedFiles.each { changedFile ->
+		// 20210517 , gitHash
 		// if the changed file has a build script then add to build list
+		//gitBuildSetBuildReportRecord.addProperty(changedFile,gitHash)
 		if (ScriptMappings.getScriptName(changedFile)) {
 			buildSet.add(changedFile)
 			if (props.verbose) println "** Found build script mapping for $changedFile. Adding to build list"
@@ -75,7 +83,9 @@ def performImpactAnalysis(Set<String> changedFiles, RepositoryClient repositoryC
 
 			// perform impact analysis on changed file
 			if (props.verbose) println "** Performing impact analysis on changed file $changedFile"
-			ImpactResolver impactResolver = createImpactResolver(changedFile, props.impactResolutionRules, repositoryClient)
+
+			String impactResolutionRules = props.getFileProperty('impactResolutionRules', changedFile)
+			ImpactResolver impactResolver = createImpactResolver(changedFile, impactResolutionRules, repositoryClient)
 
 			// get excludeListe
 			List<PathMatcher> excludeMatchers = createPathMatcherPattern(props.excludeFileList)
@@ -104,6 +114,50 @@ def performImpactAnalysis(Set<String> changedFiles, RepositoryClient repositoryC
 		}
 	}
 	
+	if (props.impactBuildOnBuildPropertyChanges){
+		if (props.verbose) println "*** Perform impacted analysis for property changes."
+
+		changedBuildProperties.each { changedProp ->
+
+			if (props.impactBuildOnBuildPropertyList.contains(changedProp.toString())){
+
+				// perform impact analysis on changed property
+				if (props.verbose) println "** Performing impact analysis on property $changedProp"
+
+				// create logical dependency and query collections for logical files with this dependency
+				LogicalDependency lDependency = new LogicalDependency("$changedProp","BUILDPROPERTIES","PROPERTY")
+				logicalFileList = repositoryClient.getAllLogicalFiles(props.applicationCollectionName, lDependency)
+
+
+				// get excludeListe
+				List<PathMatcher> excludeMatchers = createPathMatcherPattern(props.excludeFileList)
+
+				logicalFileList.each { logicalFile ->
+					def impactFile = logicalFile.getFile()
+					if (props.verbose) println "** Found impacted file $impactFile"
+					// only add impacted files that have a build script mapped to it
+					if (ScriptMappings.getScriptName(impactFile)) {
+						// only add impacted files, that are in scope of the build.
+						if (!matches(impactFile, excludeMatchers)){
+							buildSet.add(impactFile)
+							if (props.verbose) println "** $impactFile is impacted by changed property $changedProp. Adding to build list."
+						}
+						else {
+							// impactedFile found, but on Exclude List
+							//   Possible reasons: Exclude of file was defined after building the collection.
+							//   Rescan/Rebuild Collection to synchronize it with defined build scope.
+							if (props.verbose) println "!! $impactFile is impacted by changed property $changedProp, but is on Exlude List. Not added to build list."
+						}
+					}
+				}
+			}else {
+				if (props.verbose) println "** Calculation of impacted files by changed property $changedProp has been skipped due to configuration. "
+			}
+		}
+	}else {
+		if (props.verbose) println "** Calculation of impacted files by changed properties has been skipped due to configuration. "
+	}
+
 	return buildSet
 }
 
@@ -115,6 +169,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 	Set<String> changedFiles = new HashSet<String>()
 	Set<String> deletedFiles = new HashSet<String>()
 	Set<String> renamedFiles = new HashSet<String>()
+	Set<String> changedBuildProperties = new HashSet<String>()
 
 	// create a list of source directories to search
 	List<String> directories = []
@@ -146,6 +201,7 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 	}
 
 	// calculate the changed and deleted files by diff'ing the current and baseline hashes
+	
 	directories.each { dir ->
 		dir = buildUtils.getAbsolutePath(dir)
 		if (props.verbose) println "** Calculating changed files for directory $dir"
@@ -174,11 +230,18 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 
 		if (props.verbose) println "*** Changed files for directory $dir:"
 		changed.each { file ->
-			if ( !matches(file, excludeMatchers)) {
-				(file, mode) = fixGitDiffPath(file, dir, true, null)
-				if ( file != null ) {
+			(file, mode) = fixGitDiffPath(file, dir, true, null)
+			if ( file != null ) {
+				if ( !matches(file, excludeMatchers)) {
 					changedFiles << file
 					if (props.verbose) println "**** $file"
+				}
+				//retrieving changed build properties
+				if (props.impactBuildOnBuildPropertyChanges && file.endsWith(".properties")){
+					if (props.verbose) println "**** $file"
+					String gitDir = new File(buildUtils.getAbsolutePath(file)).getParent()
+					String pFile =  new File(buildUtils.getAbsolutePath(file)).getName()
+					changedBuildProperties.addAll(gitUtils.getChangedProperties(gitDir, baseline, current, pFile))
 				}
 			}
 		}
@@ -201,12 +264,63 @@ def calculateChangedFiles(BuildResult lastBuildResult) {
 			}
 		}
 	}
-
+	
 	return [
 		changedFiles,
 		deletedFiles,
-		renamedFiles
+		renamedFiles,
+		changedBuildProperties
 	]
+}
+
+// with impacts
+def createFeatureBuildList(RepositoryClient repositoryClient) {
+	Set<String> changedFiles = new HashSet<String>()
+
+	// create the list of build directories
+	List<String> srcDirs = []
+	if (props.applicationSrcDirs)
+		srcDirs.addAll(props.applicationSrcDirs.split(','))
+
+	//
+	srcDirs.each{ srcDir ->
+		dir = buildUtils.getAbsolutePath(srcDir)
+		
+		// buildScope
+		Set<String> fileSet = new HashSet<String>()
+		// scmChangeHistory
+		Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
+		// Build Record with Merge Hashes
+		PropertiesRecord scmConfigration = new PropertiesRecord("scmConfig.${srcDir}")
+
+		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
+		println "###001" + scmChangeHistory
+		println "###002" + fileSet
+		// buildFileSet
+		fileSet.each{ file ->
+
+			(file, mode) = fixGitDiffPath(file, dir, true, null)
+			if ( file != null ) {
+		//		if (ScriptMappings.getScriptName(file)) {
+		//			if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
+					println "adding $file"
+					changedFiles.add(file)
+		//		}
+			}
+		}
+
+		//Store PropertyRecord
+		scmChangeHistory.each{entry ->  println "$entry.key: $entry.value" 
+			scmConfigration.addProperty(entry.key,entry.value.toString())
+		}
+
+		BuildReportFactory.getBuildReport().addRecord(scmConfigration)
+	}
+	
+	// perform impactAnalysis on changedFile for Feature
+	println "###003" + changedFiles
+	Set<String> buildSet = performImpactAnalysis(changedFiles, null, repositoryClient)
+	return buildSet
 }
 
 /*
@@ -246,55 +360,6 @@ def scanOnlyStaticDependencies(List buildList, RepositoryClient repositoryClient
 			}
 		}
 	}
-}
-
-// with impacts
-def createFeatureBuildList(RepositoryClient repositoryClient) {
-	Set<String> changedFiles = new HashSet<String>()
-
-	// create the list of build directories
-	List<String> srcDirs = []
-	if (props.applicationSrcDirs)
-		srcDirs.addAll(props.applicationSrcDirs.split(','))
-
-	//
-	srcDirs.each{ srcDir ->
-		dir = buildUtils.getAbsolutePath(srcDir)
-		
-		// buildScope
-		Set<String> fileSet = new HashSet<String>()
-		// scmChangeHistory
-		Map<String,String[]> scmChangeHistory = new HashMap<String,String[]>()
-		// Build Record with Merge Hashes
-		PropertiesRecord scmConfigration = new PropertiesRecord("scmConfig.${srcDir}")
-
-		(scmChangeHistory,fileSet) = gitUtils.getModifiedFiles(dir,props.featureBuild)
-		println "###001" + scmChangeHistory
-		println "###002" + fileSet
-		// buildFileSet
-		fileSet.each{ file ->
-
-			file = fixGitDiffPath(file, dir, true)
-			if ( file != null ) {
-		//		if (ScriptMappings.getScriptName(file)) {
-		//			if (props.verbose) println "** Found build script mapping for $file. Adding to build list"
-					changedFiles.add(file)
-		//		}
-			}
-		}
-
-		//Store PropertyRecord
-		scmChangeHistory.each{entry ->  println "$entry.key: $entry.value" 
-			scmConfigration.addProperty(entry.key,entry.value.toString())
-		}
-
-		BuildReportFactory.getBuildReport().addRecord(scmConfigration)
-	}
-	
-	// perform impactAnalysis on changedFile for Feature
-	Set<String> buildSet = performImpactAnalysis(changedFiles, repositoryClient)
-	println "###003" + buildSet
-	return buildSet
 }
 
 def createImpactResolver(String changedFile, String rules, RepositoryClient repositoryClient) {
@@ -355,6 +420,11 @@ def updateCollection(changedFiles, deletedFiles, renamedFiles, RepositoryClient 
 			try {
 				def logicalFile = scanner.scan(file, props.workspace)
 				if (props.verbose) println "*** Logical file for $file =\n$logicalFile"
+
+				if (props.impactBuildOnBuildPropertyChanges && props.impactBuildOnBuildPropertyChanges.toBoolean()){
+					createPropertyDependency(file, logicalFile)
+				}
+
 				logicalFiles.add(logicalFile)
 			} catch (Exception e) {
 
@@ -558,7 +628,48 @@ def createPathMatcherPattern(String property) {
 	return pathMatchers
 }
 
+/**
+ * createPropertyDependency
+ * method to add a dependency to a property key 
+ */
+def createPropertyDependency(String buildFile, LogicalFile logicalFile){
+	if (props.verbose) println "*** Adding LogicalDependencies for Build Properties for $buildFile"
+	// get language prefix
+	def scriptMapping = ScriptMappings.getScriptName(buildFile)
+	if(scriptMapping != null){
+		def langPrefix = buildUtils.getLangPrefix(scriptMapping)
+		// language COB
+		if (langPrefix != null ){
+			// generic properties
+			if (props."${langPrefix}_impactPropertyList"){
+				addBuildPropertyDependencies(props."${langPrefix}_impactPropertyList", logicalFile)
+			}
+			// cics properties
+			if (buildUtils.isCICS(logicalFile) && props."${langPrefix}_impactPropertyListCICS") {
+				addBuildPropertyDependencies(props."${langPrefix}_impactPropertyListCICS", logicalFile)
+			}
+			// sql properties
+			if (buildUtils.isSQL(logicalFile) && props."${langPrefix}_impactPropertyListSQL") {
+				addBuildPropertyDependencies(props."${langPrefix}_impactPropertyListSQL", logicalFile)
+			}
+		}
+
+	}
+}
 
 
+/**
+ * addBuildPropertyDependencies
+ * method to logical dependencies records to a logical file for a DBB build property
+ */
+def addBuildPropertyDependencies(String buildProperties, LogicalFile logicalFile){
+	String[] buildProps = buildProperties.split(',')
+
+	buildProps.each { buildProp ->
+		buildProp = buildProp.trim()
+		if (props.verbose) println "*** Adding LogicalDependency for build prop $buildProp for $logicalFile.file"
+		logicalFile.addLogicalDependency(new LogicalDependency("$buildProp","BUILDPROPERTIES","PROPERTY"))
+	}
+}
 
 

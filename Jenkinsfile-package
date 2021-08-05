@@ -4,9 +4,16 @@
 def gitUrl = 'git@github.ibm.com:dennis-behm/dbb-zappbuild-1.git'
 def gitCredId = 'drice-us'
 
+
+// PR creation through GH CLI
+// token for PR
+def gitToken = 'c9d1e059-2458-4d1a-aa3e-5a73c89b20c5'
+def githostname = 'github.ibm.com'
+def productionBranch = 'production'
+
 // application
 def GitBranch = 'master'
-def zAppBuild = 'dbb-zappbuild-vanilla'
+def zAppBuild = 'dbb-zappbuild'
 
 //dbb script from public github
 def dbbGitRepo = 'https://github.com/IBM/dbb'
@@ -30,152 +37,182 @@ def ucdUri = 'https://10.3.20.233:8443/'
 //echo "received ${featureName}"
 
 properties([
-    parameters([
-        gitParameter(branch: '',
-                     branchFilter: 'origin/(.*)',
-                     defaultValue: 'master',
-                     description: 'Specify a feature Branch for packaging',
-                     name: 'BRANCH',
-                     quickFilterEnabled: true,
-                     listSize : '2',
-                     selectedValue: 'NONE',
-                     sortMode: 'NONE',
-                     tagFilter: '*',
-                     type: 'PT_BRANCH')
-    ])
+	parameters([
+		gitParameter(branch: '',
+		branchFilter: 'origin/(.*)',
+		defaultValue: 'master',
+		description: 'Specify a feature Branch for packaging',
+		name: 'BRANCH',
+		quickFilterEnabled: true,
+		listSize : '2',
+		selectedValue: 'NONE',
+		sortMode: 'NONE',
+		tagFilter: '*',
+		type: 'PT_BRANCH')
+	])
 ])
 
 //system
 def groovyz = '/usr/lpp/dbb/v1r0/bin/groovyz'
 
+// environment def
+def startTime = new Date()
+def formattedTime = startTime.format("yyyyMMdd.hhmmss.mmm")
+
+// global pipeline vars
+def feature_releaseBranch = "release_${params.BRANCH}_${BUILD_NUMBER}_${formattedTime}"
+def buildReportFolder
 node (label: 'ztec-201-STC') {
 
-    def workOutoutDir = "${WORKSPACE}/work"
-	
-    	
-	
-    stage ('Cleanup') {
-        // rm
-        dir("${WORKSPACE}/work"){deleteDir()}
-    }
+	def workOutoutDir = "${WORKSPACE}/work"
+
+
+
+	stage ('Cleanup') {
+		// rm
+		dir("${WORKSPACE}/work"){deleteDir()}
+	}
 
 	stage('Git Checkout') {
 		dir (zAppBuild) {
-		
-			checkout([$class: 'GitSCM', branches: [[name: GitBranch]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
-		
-			//scmVars = checkout([$class: 'GitSCM', branches: [[name: env.BRANCH_NAME]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
-			//env.GIT_COMMIT = scmVars.GIT_COMMIT
-    			//env.DATASET_BRANCH = env.BRANCH_NAME.take(8).toUpperCase()
-    			//env.COLLECTION_BRANCH = env.BRANCH_NAME.capitalize()
-			
+
+			checkout([$class: 'GitSCM', branches: [[name: GitBranch]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [
+					[credentialsId: gitCredId, url: gitUrl]
+				]])
+
+//			scmVars = checkout([$class: 'GitSCM', branches: [[name: env.BRANCH_NAME]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
+//			env.GIT_COMMIT = scmVars.GIT_COMMIT
+//			env.DATASET_BRANCH = env.BRANCH_NAME.take(8).toUpperCase()
+//			env.COLLECTION_BRANCH = env.BRANCH_NAME.capitalize()
+
 		}
-		
+
 		dir("dbb") {
-                        sh(script: 'rm -f .git/info/sparse-checkout', returnStdout: true)
-                        def scmVars =
-                            checkout([$class: 'GitSCM', branches: [[name: dbbGitBranch]],
-                              doGenerateSubmoduleConfigurations: false,
-                              extensions: [
-                                       [$class: 'SparseCheckoutPaths',  sparseCheckoutPaths:[[$class:'SparseCheckoutPath', path:'Pipeline']]]
-                                    ],
-                              submoduleCfg: [],
-                            userRemoteConfigs: [[
-                                url: dbbGitRepo,
-                            ]]])
-                    }
-		
+			sh(script: 'rm -f .git/info/sparse-checkout', returnStdout: true)
+			def scmVars =
+					checkout([$class: 'GitSCM', branches: [[name: dbbGitBranch]],
+						doGenerateSubmoduleConfigurations: false,
+						extensions: [
+							[$class: 'SparseCheckoutPaths',  sparseCheckoutPaths:[
+									[$class:'SparseCheckoutPath', path:'Pipeline']
+								]]
+						],
+						submoduleCfg: [],
+						userRemoteConfigs: [
+							[
+								url: dbbGitRepo,
+							]
+						]])
+		}
+
 	}
 
 	stage("Build") {
-	    //sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --reset --verbose"
-		if (params.BRANCH == 'master'){
-			sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --impactBuild --verbose"
-		} else {
-	    		sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild ${params.BRANCH} --verbose"
-		}
-	    //calculating the Buildoutput folder name
-	
-	    BUILD_OUTPUT_FOLDER = sh (script: "ls ${WORKSPACE}/BUILD-${BUILD_NUMBER}", returnStdout: true).trim()
+				if (params.BRANCH == 'master'){
+					sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --impactBuild --verbose"
+				} else {
+					sh "${groovyz}  ${zAppBuild}/build.groovy --workspace ${WORKSPACE}/${zAppBuild}/samples --hlq JENKINS.ZAPP.CLEAN --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER} --application MortgageApplication --logEncoding UTF-8 --featureBuild ${params.BRANCH} --verbose"
+				}
+				//calculating the Buildoutput folder name
 		
-		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
-	    archiveArtifacts allowEmptyArchive: true,
-											artifacts: '*.log,*.json,*.html,*.txt',
-											excludes: '*clist',
-											onlyIfSuccessful: false
-	    }
-		
-	}
-/*
-	stage("Run IDZ Code Review") {
-	    sh "${groovyz} -Dlog4j.configurationFile=/var/dbb/config/log4j2.properties ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --properties /var/dbb/extensions/idz-codereview/codereview.properties"
-		
-		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
-		crContent = readFile file: "CodeReviewJUNIT.xml"
-		 archiveArtifacts allowEmptyArchive: true,
-											artifacts: '*.csv,*.xml',
-											excludes: '*clist',
-											onlyIfSuccessful: false
-	    }
-	    writeFile file: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml", text:crContent.trim()
-		junit allowEmptyResults: true, skipPublishingChecks: true, testResults: "BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml"
-	}
-*/	
-	stage("Package") {
-//        sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig}"
-        
-        	if (params.BRANCH != 'master'){
-        	
-        	def startTime = new Date()
-		def formattedTime = startTime.format("yyyyMMdd.hhmmss.mmm")
-        
-        sh "${groovyz} /var/dbb/extensions/ucd-packaging/dbb-ucd-packaging-DAT.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --versionName ${params.BRANCH}_${BUILD_NUMBER}_${formattedTime} --prop ${artifactoryConfig}"
+				BUILD_OUTPUT_FOLDER = sh (script: "ls ${WORKSPACE}/BUILD-${BUILD_NUMBER}", returnStdout: true).trim()
+				buildReportFolder="${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}"
+				dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
+					archiveArtifacts allowEmptyArchive: true,
+					artifacts: '*.log,*.json,*.html,*.txt',
+					excludes: '*clist',
+					onlyIfSuccessful: false
+				}
 
-		dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
-	    archiveArtifacts allowEmptyArchive: true,
-											artifacts: 'shiplist.xml',
-											excludes: '*clist',
-											onlyIfSuccessful: false
-	    }
-		}
-		else {
-			echo "Packaging skipped."
+	}
+	
+	stage('Create Feature-Release Git Branch and Cherry-Pick FeatureCommits') {
+		dir ('Feature_Release') {
+			
+			deleteDir()
+
+			withCredentials(bindings: [
+				sshUserPrivateKey(credentialsId: gitCredId, keyFileVariable: 'SSH_KEY')
+			]) {
+			
+//			echo "----iconv sshkey ------"
+//			sh('iconv -f utf-8 -T -t IBM-1047 $SSH_KEY > $SSH_KEY.tmp')
+//			sh('chmod 600 $SSH_KEY')
+//			sh('mv $SSH_KEY.tmp $SSH_KEY')
+//			sh('chmod 400 $SSH_KEY')
+			
+//			echo "----invole cherrypicking script ------"
+			def gitURL='git@github.ibm.com:dennis-behm/dbb-zappbuild-1.git'
+			def baselineBranch='production'
+			
+			sh ('GIT_SSH_COMMAND=\'ssh -i $SSH_KEY\' '+ "/usr/lpp/dbb/v1r0/bin/groovyz /var/dbb/extensions/git-cherryPickFeatureCommits/git-cherrypick-feature.groovy --gitUrl $gitURL --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --repositoryPath ${WORKSPACE}/Feature_Release --baselineBranch $baselineBranch --gitBranch $feature_releaseBranch")
+							
+			}
 		}
 	}
+	
 	/*
-//	stage("Run Deployment") {
-//        sh "${groovyz} /var/dbb/integrations/ucd-deployment/UCDDeploy.groovy "
-//	}
-	
-	stage('Run UCD Deployment') {
-         //   steps {
-               // script{
-               //     if ( hasBuildFiles ) {
-                        script{
-                          tee("UCD-DEPLOY-${BUILD_NUMBER}.log") {
-								step(
-									 [$class: 'UCDeployPublisher',
-										deploy: [
-											deployApp: ucdApplication,
-											deployDesc: 'Requested from Jenkins',
-											deployEnv: ucdEnv,
-											deployOnlyChanged: false,
-											deployProc: ucdProcess,
-											deployVersions: ucdComponent + ':latest'],
-										siteName: ucdSite])
-							}
-							def regex = java.util.regex.Pattern.compile("Deployment request id is: \'(.*)\'")
-							def matcher = regex.matcher(readFile("UCD-DEPLOY-${BUILD_NUMBER}.log"))
-							if (matcher.find()) {
-								def requestUri = "${ucdUri}/#applicationProcessRequest/${matcher.group(1)}"
-								echo "UCD Deployment request: ${requestUri}"
-								createSummary icon:"star-gold.png", text: "<a href=\'$requestUri\' target=\'_other\'>UCD Deployment request</a>"
-							}
-                        }
-                //    }
-               // }
-            //}
-        }
-	*/ 
-	
+	 stage("Run IDZ Code Review") {
+	 sh "${groovyz} -Dlog4j.configurationFile=/var/dbb/config/log4j2.properties ${WORKSPACE}/dbb/Pipeline/RunIDZCodeReview/RunCodeReview.groovy --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --properties /var/dbb/extensions/idz-codereview/codereview.properties"
+	 dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
+	 crContent = readFile file: "CodeReviewJUNIT.xml"
+	 archiveArtifacts allowEmptyArchive: true,
+	 artifacts: '*.csv,*.xml',
+	 excludes: '*clist',
+	 onlyIfSuccessful: false
+	 }
+	 writeFile file: "${WORKSPACE}/BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml", text:crContent.trim()
+	 junit allowEmptyResults: true, skipPublishingChecks: true, testResults: "BUILD-${BUILD_NUMBER}/CodeReviewJUNIT.xml"
+	 }
+	 */	
+	stage("Package") {
+//		        sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig}"
+
+				if (params.BRANCH != 'master'){
+		
+					sh "${groovyz} ${WORKSPACE}/dbb/Pipeline/CreateUCDComponentVersion/dbb-ucd-packaging.groovy --buztool ${buztoolLocation} --workDir ${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER} --component ${ucdComponent} --prop ${artifactoryConfig} --versionName ${params.BRANCH}_${BUILD_NUMBER}_${formattedTime} --gitBranch $feature_releaseBranch --repositoryInfoPropertiesFile ${WORKSPACE}/${zAppBuild}/samples/MortgageApplication/application-conf/packaging.properties --pipelineURL ${BUILD_URL}"
+		
+					dir ("${WORKSPACE}/BUILD-${BUILD_NUMBER}/${BUILD_OUTPUT_FOLDER}") {
+						archiveArtifacts allowEmptyArchive: true,
+						artifacts: 'shiplist.xml',
+						excludes: '*clist',
+						onlyIfSuccessful: false
+					}
+				}
+				else {
+		echo "Packaging skipped."
+				}
+	}
+
+}
+
+node (label: 'ztec-rhel8-96') {
+	stage("Prepare GitHub PR") {
+		
+		def pr_title = "Release ${params.BRANCH}"
+		def pr_body = "PR for ${params.BRANCH}"
+		
+		dir("GH CLI"){
+			withCredentials([
+				usernamePassword(credentialsId: gitToken, passwordVariable: 'token', usernameVariable: 'username')
+			]) {
+
+				scmVars = checkout([$class: 'GitSCM', branches: [[name: GitBranch]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [
+					[credentialsId: gitCredId, url: gitUrl]
+				]])
+			
+				sh 'gh --version'
+
+				sh 'echo $token > token.txt'
+
+				sh "gh auth login --hostname ${githostname} --with-token < token.txt"
+
+				sh "gh pr create --base ${productionBranch} --head $feature_releaseBranch --title \"${pr_title}\" --body \"${pr_body}\" "
+
+				sh "gh pr list"
+
+			}
+		}
+	}
+
 }

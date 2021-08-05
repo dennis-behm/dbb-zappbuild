@@ -65,7 +65,7 @@ node (label: 'ztec-201-STC') {
 		dir (zAppBuild) {
 			scmVars = checkout([$class: 'GitSCM', branches: [[name: env.BRANCH_NAME]], doGenerateSubmoduleConfigurations: false, submoduleCfg: [], userRemoteConfigs: [[credentialsId: gitCredId, url: gitUrl]]])
 			env.GIT_COMMIT = scmVars.GIT_COMMIT
-    			env.DATASET_BRANCH = env.BRANCH_NAME.take(8).toUpperCase()
+    			env.DATASET_BRANCH = env.BRANCH_NAME.take(6).toUpperCase()
     			env.COLLECTION_BRANCH = env.BRANCH_NAME.capitalize()
 			
 		}
