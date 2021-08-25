@@ -175,7 +175,7 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 		compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_srcPDS}($member)").options('shr').report(true))
 	}
 	
-	compile.dd(new DDStatement().name("SYSPRINT").options(props.cobol_printTempOptions))
+	compile.dd(new DDStatement().name("SYSPRINT").dsn("${props.cobol_printPDS}($member)").options('shr'))
 	compile.dd(new DDStatement().name("SYSMDECK").options(props.cobol_tempOptions))
 	(1..17).toList().each { num ->
 		compile.dd(new DDStatement().name("SYSUT$num").options(props.cobol_tempOptions))
