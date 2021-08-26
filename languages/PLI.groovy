@@ -128,7 +128,7 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 
 	// add DD statements to the compile command
 	compile.dd(new DDStatement().name("SYSIN").dsn("${props.pli_srcPDS}($member)").options('shr').report(true))
-	compile.dd(new DDStatement().name("SYSPRINT").options(props.pli_listOptions))
+	compile.dd(new DDStatement().name("SYSPRINT").dsn("${props.pli_listPDS}($member)").options('shr'))
 	compile.dd(new DDStatement().name("SYSMDECK").options(props.pli_tempOptions))
 	(1..17).toList().each { num ->
 		compile.dd(new DDStatement().name("SYSUT$num").options(props.pli_tempOptions))
