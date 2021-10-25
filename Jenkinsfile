@@ -4,6 +4,8 @@ pipeline {
 	stages {
 		stage('init') {
 			steps {
+				sh "echo 'Hello World'"
+				
 				checkout scm
 			}
 		}
