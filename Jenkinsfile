@@ -5,7 +5,8 @@ pipeline {
 		stage('init') {
 			steps {
 				sh "echo 'Hello World'"
-				
+				sh "ls -lisa $HOME"
+				sh "ls -lisa $GIT_SHELL"
 				checkout scm
 			}
 		}
