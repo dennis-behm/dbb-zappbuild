@@ -6,6 +6,9 @@ import groovy.transform.*
 import groovy.json.JsonSlurper
 import com.ibm.dbb.build.DBBConstants.CopyMode
 import com.ibm.dbb.build.report.records.*
+import java.nio.file.FileSystems
+import java.nio.file.Path
+import java.nio.file.PathMatcher
 
 // define script properties
 @Field BuildProperties props = BuildProperties.getInstance()
@@ -69,6 +72,8 @@ def getFileSet(String dir, boolean relativePaths, String includeFileList, String
 
 def copySourceFiles(String buildFile, String srcPDS, String dependencyPDS, DependencyResolver dependencyResolver) {
 	// only copy the build file once
+	
+	
 	if (!copiedFileCache.contains(buildFile)) {
 		copiedFileCache.add(buildFile)
 		new CopyToPDS().file(new File(getAbsolutePath(buildFile)))
@@ -91,6 +96,11 @@ def copySourceFiles(String buildFile, String srcPDS, String dependencyPDS, Depen
 			if (physicalDependency.isResolved()) {
 				String physicalDependencyLoc = "${physicalDependency.getSourceDir()}/${physicalDependency.getFile()}"
 
+				
+				//
+				dependencyPDS = parseDatasetMapping(props.cobol_dependencyDatasetMapping, physicalDependencyLoc)
+				
+				
 				// only copy the dependency file once per script invocation
 				if (!copiedFileCache.contains(physicalDependencyLoc)) {
 					copiedFileCache.add(physicalDependencyLoc)
@@ -241,6 +251,31 @@ def parseResolutionRules(String json) {
 	return rules
 }
 
+def parseDatasetMapping(String json, String dFile) {
+	JsonSlurper slurper = new groovy.json.JsonSlurper()
+	datasetMapping = slurper.parseText(json)
+	String targetDataset
+	//println datasetMapping
+	if (datasetMapping) {
+		datasetMapping.each { key, value ->
+			//println key
+			//println value
+
+			List<PathMatcher> pathMatchers = createPathMatcherPattern(value)
+			if (matches(dFile, pathMatchers)){
+				//println ("$dFile --> $key")
+				targetDataset = props.getProperty(key) 
+			}
+		}
+	}
+	if (targetDataset != null ){
+		println ("$dFile --> $targetDataset")
+		return targetDataset
+	}
+	else 
+		{println "!** DependencyFile $dFile is not mapped to any dataset."}
+		
+}
 
 
 /*
@@ -481,4 +516,33 @@ def generateDb2InfoRecord(String buildFile){
 	}
 		
 	return db2BindInfo		
+}
+
+/**
+ * createPathMatcherPattern
+ * Generic method to build PathMatcher from a build property
+ */
+
+def createPathMatcherPattern(String property) {
+	List<PathMatcher> pathMatchers = new ArrayList<PathMatcher>()
+	if (property) {
+		property.split(',').each{ filePattern ->
+			if (!filePattern.startsWith('glob:') || !filePattern.startsWith('regex:'))
+				filePattern = "glob:$filePattern"
+			PathMatcher matcher = FileSystems.getDefault().getPathMatcher(filePattern)
+			pathMatchers.add(matcher)
+		}
+	}
+	return pathMatchers
+}
+
+def matches(String file, List<PathMatcher> pathMatchers) {
+	def result = pathMatchers.any { matcher ->
+		Path path = FileSystems.getDefault().getPath(file);
+		if ( matcher.matches(path) )
+		{
+			return true
+		}
+	}
+	return result
 }

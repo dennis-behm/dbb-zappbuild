@@ -39,17 +39,30 @@ sortedList.each { buildFile ->
 	// Check if this a testcase
 	isZUnitTestCase = (props.getFileProperty('cobol_testcase', buildFile).equals('true')) ? true : false
 
-	// copy build file and dependency files to data sets
+	// DependencyResolver and member
 	String rules = props.getFileProperty('cobol_resolutionRules', buildFile)
 	DependencyResolver dependencyResolver = buildUtils.createDependencyResolver(buildFile, rules)
+	LogicalFile logicalFile = dependencyResolver.getLogicalFile()
+	String member = CopyToPDS.createMemberName(buildFile)
+	
+	// add custom dependency
+	println "${props.workspace}/${props.application}/db2bind/${member}.db2bind"
+	File db2BindFile = new File("${props.workspace}/${props.application}/db2bind/${member}.db2bind")
+	//if the file exists
+	if(db2BindFile.exists()){
+		logicalFile.addLogicalDependency(new LogicalDependency(member, "META", "DB2BINDMEMBER"))
+		println logicalFile
+	}
+	
+	
+	// copy build file and dependency files to data sets
 	if(isZUnitTestCase){
 		buildUtils.copySourceFiles(buildFile, props.cobol_testcase_srcPDS, null, null)
 	}else{
 		buildUtils.copySourceFiles(buildFile, props.cobol_srcPDS, props.cobol_cpyPDS, dependencyResolver)
 	}
 	// create mvs commands
-	LogicalFile logicalFile = dependencyResolver.getLogicalFile()
-	String member = CopyToPDS.createMemberName(buildFile)
+
 	File logFile = new File( props.userBuild ? "${props.buildOutDir}/${member}.log" : "${props.buildOutDir}/${member}.cobol.log")
 	if (logFile.exists())
 		logFile.delete()
