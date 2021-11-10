@@ -101,6 +101,12 @@ def copySourceFiles(String buildFile, String srcPDS, String dependencyPDS, Depen
 				dependencyPDS = parseDatasetMapping(props.cobol_dependencyDatasetMapping, physicalDependencyLoc)
 				
 				
+				println "+++++"
+				println "Dependency : " + physicalDependency.getFile()
+				PropertyMappings dsMapping = new PropertyMappings("cobol_datasetMapping")
+				println "Target dataset : " + dsMapping.getValue(physicalDependency.getFile())
+				println "+++++"
+				
 				// only copy the dependency file once per script invocation
 				if (!copiedFileCache.contains(physicalDependencyLoc)) {
 					copiedFileCache.add(physicalDependencyLoc)
