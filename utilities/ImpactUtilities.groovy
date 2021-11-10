@@ -500,9 +500,10 @@ def updateCollection(changedFiles, deletedFiles, renamedFiles, RepositoryClient 
 				
 				//Code to create the dependency between the built file and the Db2bind file
 				String member = CopyToPDS.createMemberName(file)
-				File db2BindFile = new File("${props.workspace}/${props.application}/db2bind/${member}.db2bind")
+				String db2BildFileLoc = "${props.workspace}/${props.application}/db2bind/${member}.db2bind"
+				File db2BindFile = new File(db2BildFileLoc)
 				println "++ " + db2BindFile
-				String db2FileMember= CopyToPDS.createMemberName(db2BindFile)
+				String db2FileMember= CopyToPDS.createMemberName(db2BildFileLoc)
 				
 				if(db2BindFile.exists()){
 				logicalFile.addLogicalDependency(new LogicalDependency(db2FileMember, "META", "DB2BINDMEMBER"))
