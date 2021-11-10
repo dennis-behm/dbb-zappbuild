@@ -51,6 +51,7 @@ sortedList.each { buildFile ->
 	//if the file exists
 	if(db2BindFile.exists()){
 		logicalFile.addLogicalDependency(new LogicalDependency(member, "META", "DB2BINDMEMBER"))
+		println "Print updated logicalFile:"
 		println logicalFile
 	}
 	
