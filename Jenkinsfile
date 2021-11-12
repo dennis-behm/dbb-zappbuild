@@ -11,8 +11,15 @@ pipeline {
 		stage('Invoke zAppBuild Testframework') {
 			steps {
 				script{
+					
+					// retrieve settings from Jenkins Agent Configuration
+					def dbbHome = env.DBB_HOME
+					def dbbUrl = env.DBB_URL // https://10.3.20.96:10443/dbb
+					def dbbCredentialOptions = env.DBB_CREDENTIAL_OPTS //'-i ADMIN -p ADMIN'
+					def dbbPropFilesOpts = env.DBB_PROP_FILES // '/var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties'
+										
 					def llq = env.BRANCH_NAME.take(8).toUpperCase()
-					sh "${groovyz} ${WORKSPACE}/dbb-zappbuild/test/test.groovy -b ${env.BRANCH_NAME}-a MortgageApplication -q JENKINS.DBB.TEST.BUILD.${llq} -u https://10.3.20.96:10443/dbb -i ADMIN -p ADMIN --propFiles /var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties --outDir ${WORKSPACE}/testframework_out --verbose"
+					echo "${groovyz} ${WORKSPACE}/dbb-zappbuild/test/test.groovy -b ${env.BRANCH_NAME} -a MortgageApplication -q JENKINS.DBB.TEST.BUILD.${llq} -u ${dbbUrl} ${dbbCredentialOptions} --propFiles ${dbbPropFilesOpts} --outDir ${WORKSPACE}/testframework_out --verbose"
 				}
 			}
 			post { always {
