@@ -21,6 +21,7 @@ pipeline {
 										artifacts: '*.log,*.json,*.html,*.txt',
 										excludes: '*clist',
 										onlyIfSuccessful: false
+					}
 				}
 			}
 		}
