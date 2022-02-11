@@ -56,6 +56,7 @@ dbb.RepositoryClient.passwordFile | DBB configuration property for web applicati
 ### dependencyReport.properties
 Properties used by the impact utilities to generate a report of external impacted files
 
+Property | Description
 --- | ---
 reportExternalImpacts | Flag to indicate if an *impactBuild* should analyze and report external impacted files in other collections ***Can be overridden by build.groovy option -re, --reportExternalImpacts***
 reportExternalImpactsAnalysisDepths | Configuration of the analysis depths when performing impact analysis for external impacts (simple|deep) *** Can be overridden by application-conf ***
@@ -82,7 +83,7 @@ assembler_compileErrorFeedbackXmlOptions | BPXWDYN creation options for SYSXMLSD
 assembler_pgm | MVS program name of the high level assembler
 assembler_linkEditor | MVS program name of the link editor
 dbb.DependencyScanner.languageHint | DBB configuration property used by the dependency scanner to disambiguate a source file's language
-assembler_dependenciesDatasetMapping | DBB property mapping to map dependencies to different target datasets
+assembler_dependenciesDatasetMapping | DBB property mapping to map dependencies to target datasets
 
 ### BMS.properties
 Build properties used by zAppBuild/language/BMS.groovy
@@ -127,7 +128,7 @@ cobol_compileErrorFeedbackXmlOptions | BPXWDYN creation options for SYSXMLSD dat
 cobol_compiler | MVS program name of the COBOL compiler
 cobol_linkEditor | MVS program name of the link editor
 cobol_dependenciesAlternativeLibraryNameMapping | a map to define target dataset definition for alternate include libraries
-cobol_dependenciesDatasetMapping | dbb property mapping to map dependencies to different target datasets
+cobol_dependenciesDatasetMapping | dbb property mapping to map dependencies to target datasets
 
 dbb.DependencyScanner.languageHint | DBB configuration property used by the dependency scanner to disambiguate a source file's language
 
@@ -174,7 +175,7 @@ pli_test_loadOptions | BPXWDYN creation options for creating 'load module' type 
 pli_compileErrorFeedbackXmlOptions | BPXWDYN creation options for SYSXMLSD data set
 pli_listOptions | BPXWDYN creation options for LIST data sets
 pli_dependenciesAlternativeLibraryNameMapping | a map to define target dataset definition for alternate include libraries
-pli_dependenciesDatasetMapping | dbb property mapping to map dependencies to different target datasets
+pli_dependenciesDatasetMapping | dbb property mapping to map dependencies to target datasets
 dbb.DependencyScanner.languageHint | DBB configuration property used by the dependency scanner to disambiguate a source file's language
 
 ### MFS.properties
@@ -263,7 +264,25 @@ zunit_loadDatasets | Comma separated list of 'load module' type data sets
 zunit_loadOptions | BPXWDYN creation options for creating 'load module' type data sets
 zunit_reportDatasets | Comma separated list of 'report' type data sets
 zunit_reportOptions | BPXWDYN creation options for creating 'report' type data sets
-zunit_dependenciesDatasetMapping | DBB property mapping to map dependencies to different target datasets
+zunit_dependenciesDatasetMapping | DBB property mapping to map dependencies to target datasets
+
+### REXX.properties
+Build properties used by zAppBuild/language/REXX.groovy
+
+Property | Description 
+--- | --- 
+rexx_compiler | MVS program name of the REXX compiler/interpreter
+rexx_linkEditor | MVS program name of the link editor
+rexx_srcDataSets | Comma separated list of 'source' type data sets
+rexx_srcOptions | BPXWDYN creation options for creating 'source' type data sets
+rexx_cexecDatasets | Comma separated list of 'compiled exec' type data sets
+rexx_cexecOptions | BPXWDYN creation options for creating 'compiled exec' type data sets
+rexx_loadDatasets | Comma separated list of 'load module' type data sets
+rexx_loadOptions | BPXWDYN creation options for 'load module' type data sets
+rexx_tempOptions | BPXWDYN creation options for temporary data sets
+rexx_rexxPrintTempOptions | BPXWDYN creation options for temporary data sets
+rexx_printTempOptions | BPXWDYN creation options for temporary data sets
+rexx_dependenciesDatasetMapping | DBB property mapping to map dependencies to target datasets
 
 ### Transfer.properties
 Build properties used by zAppBuild/language/Transfer.groovy
