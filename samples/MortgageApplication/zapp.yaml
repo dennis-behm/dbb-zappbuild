@@ -55,6 +55,5 @@ profiles:
        - --application MortgageApplication
        - --hlq ${zopeneditor.userbuild.userSettings.dbbHlq}
        - --outDir ${zopeneditor.userbuild.userSettings.dbbLogDir}
-       - --propFiles /var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties
       additionalDependencies:
        - application-conf
