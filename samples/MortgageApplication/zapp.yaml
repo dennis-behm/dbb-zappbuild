@@ -1,0 +1,60 @@
+################################################################
+# LICENSED MATERIALS - PROPERTY OF IBM
+# "RESTRICTED MATERIALS OF IBM"
+# (C) COPYRIGHT IBM CORPORATION 2020, 2021. ALL RIGHTS RESERVED
+# US GOVERNMENT USERS RESTRICTED RIGHTS - USE, DUPLICATION,
+# OR DISCLOSURE RESTRICTED BY GSA ADP SCHEDULE
+# CONTRACT WITH IBM CORPORATION
+################################################################
+
+name: MortgageApplication
+description: zapp file config for zAppBuild sample application MortgageApplication
+version: 1.4.1
+author:
+    name: IBM CORPORATION
+
+property-groups:
+  - name: cobol-local
+    language: cobol
+    type: local
+    syslib:
+      - "**/copybook"
+    libraries:
+      - name: MYFILE
+        locations:
+          - "**/COPYLIB"
+
+# Mappings example using US defaults. Adjust to your code pages.
+profiles:
+  - name: RSE-Mappings
+    type: rseapi
+    settings:
+      mappings:
+        - resource: "**.SAMPLE.COB**"
+          extension: cbl
+          transfer: text
+          encoding: IBM-037
+          memberMappings:
+            - extension: dat
+              transfer: binary
+              resource: "*DAT"
+        - resource: "**PLI*"
+          extension: pl1
+          transfer: text
+          encoding: IBM-037
+      default.encoding: IBM-037
+
+  - name: dbb-build
+    type: dbb
+    settings:
+      command: $DBB_HOME/bin/groovyz
+      buildScriptPath: /var/dbb/dbb-zappbuild/build.groovy
+      buildScriptArgs:
+       - --userBuild
+       - --workspace ${zopeneditor.userbuild.userSettings.dbbWorkspace}
+       - --application MortgageApplication
+       - --hlq ${zopeneditor.userbuild.userSettings.dbbHlq}
+       - --outDir ${zopeneditor.userbuild.userSettings.dbbLogDir}
+       - --propFiles /var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties
+      additionalDependencies:
+       - application-conf
