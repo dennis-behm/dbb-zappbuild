@@ -99,10 +99,11 @@ def validateImpactBuild(String changedFile, PropertyMappings filesBuiltMappings,
 	println "** IMPACT BUILD TEST : PASSED FOR $changedFile **"
 	println "**"
     }
-    catch(AssertionError e) {
-        def result = e.getMessage()
-        assertionList << result;
- }
+	catch(AssertionError e) {
+		def result = e.getMessage()
+		assertionList << result;
+		props.testsSucceeded = false
+	}
 }
 def cleanUpDatasets() {
 	def segments = props.impactBuild_datasetsToCleanUp.split(',')

@@ -37,6 +37,8 @@ process.waitForProcessOutput(outputStream, System.err)
 println "** Validating full build results"
 def expectedFilesBuiltList = props.fullBuild_expectedFilesBuilt.split(',')
 
+@Field def assertionList = []
+
 try {
 	// Validate clean build
 	assert outputStream.contains("Build State : CLEAN") : "*! FULL BUILD FAILED\nOUTPUT STREAM:\n$outputStream\n"
@@ -47,13 +49,26 @@ try {
 
 	// Validate expected built files in output stream
 	assert expectedFilesBuiltList.count{ i-> outputStream.contains(i) } == expectedFilesBuiltList.size() : "*! FILES PROCESSED IN THE FULL BUILD DOES NOT CONTAIN THE LIST OF FILES PASSED ${expectedFilesBuiltList}\nOUTPUT STREAM:\n$outputStream\n"
-	
+
 	println "**"
 	println "** FULL BUILD TEST : PASSED **"
 	println "**"
 }
+catch(AssertionError e) {
+	def result = e.getMessage()
+	assertionList << result;
+	props.testsSucceeded = false
+}
 finally {
 	cleanUpDatasets()
+	if (assertionList.size()>0) {
+		println "\n***"
+	println "**START OF FAILED FULL BUILD TEST RESULTS**\n"
+	println "*FAILED FULL BUILD RESULTS*\n" + assertionList
+	println "\n**END OF FAILED FULL BUILD **"
+	println "***"
+  }
+	
 }
 
 // script end

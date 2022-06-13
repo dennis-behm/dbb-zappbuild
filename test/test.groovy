@@ -11,6 +11,9 @@ BuildProperties props = loadBuildProperties(args)
 // create a test branch to run under
 createTestBranch(props)
 
+// flag to control test process
+props.testsSucceeded = true
+
 // run the test scripts
 try {
 	if (props.test_testOrder) {
@@ -28,8 +31,14 @@ try {
 	}
 }
 finally {
+	
 	// delete test branch
 	deleteTestBranch(props)
+	
+	// if error occurred signal process error
+	if (props.testsSucceeded.toBoolean() == false)
+		System.exit(1)
+	
 }
 // end script
 
