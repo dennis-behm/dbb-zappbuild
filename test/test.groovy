@@ -12,7 +12,7 @@ BuildProperties props = loadBuildProperties(args)
 createTestBranch(props)
 
 // flag to control test process
-props.testsSucceeded = true
+props.testsSucceeded = 'true'
 
 // run the test scripts
 try {
