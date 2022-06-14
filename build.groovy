@@ -31,7 +31,7 @@ println("\n** Build start at $props.startTime")
 initializeBuildProcess(args)
 
 // create build list and list of deletedFiles
-List<String> buildList = new ArrayList() 
+List<String> buildList = new ArrayList()
 List<String> deletedFiles = new ArrayList()
 
 (buildList, deletedFiles) = createBuildList()
@@ -413,11 +413,11 @@ def populateBuildProperties(String[] args) {
 	// Validate User Build Dependency file is used only with user build
 	if (props.userBuildDependencyFile) assert (props.userBuild) : "*! User Build Dependency File requires User Build option."
 
-	// Validate Build Properties  
+	// Validate Build Properties
 	if(props.reportExternalImpactsAnalysisDepths) assert (props.reportExternalImpactsAnalysisDepths == 'simple' || props.reportExternalImpactsAnalysisDepths == 'deep' ) : "*! Build Property props.reportExternalImpactsAnalysisDepths has an invalid value"
 	if(props.baselineRef) assert (props.impactBuild) : "*! Build Property props.baselineRef is exclusive to an impactBuild scenario"
 	
-	// Print all build properties + some envionment variables 
+	// Print all build properties + some envionment variables
 	if (props.verbose) {
 		println("java.version="+System.getProperty("java.runtime.version"))
 		println("java.home="+System.getProperty("java.home"))
@@ -498,7 +498,7 @@ def createBuildList() {
 	buildList.addAll(buildSet)
 	buildSet = null
 
-	// 
+	//
 	List<String> deleteList = new ArrayList<String>()
 	deleteList.addAll(deletedFiles)
 	
@@ -535,9 +535,11 @@ def createBuildList() {
 		impactUtils.updateCollection(buildList, null, null, repositoryClient)
 	}
 	
-	// Loading file/member level properties from member specific properties files
-	println "** Populate file level properties from individual property files."
-	buildUtils.loadFileLevelPropertiesFromFile(buildList)
+	if (props.getFileProperty('loadFileLevelProperties', buildFile) && props.getFileProperty('loadFileLevelProperties', buildFile).toBoolean()) {
+                // Loading file/member level properties from member specific properties files
+	        println "** Populate file level properties from individual property files."
+	        buildUtils.loadFileLevelPropertiesFromFile(buildList)
+        }
 
 	return [buildList, deleteList]
 }

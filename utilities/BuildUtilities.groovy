@@ -33,7 +33,7 @@ def assertBuildProperties(String requiredProps) {
 
 /*
  * createFullBuildList() - returns all existing files of the build workspace for the --fullBuild build type
- * 
+ *
  */
 def createFullBuildList() {
 	Set<String> buildSet = new HashSet<String>()
@@ -82,7 +82,7 @@ def getFileSet(String dir, boolean relativePaths, String includeFileList, String
 /*
  * copySourceFiles - copies both the program being built and the program
  * dependencies from USS directories to data sets
- * 
+ *
  * parameters:
  *  - build file
  *  - target dataset for build file
@@ -193,8 +193,8 @@ def copySourceFiles(String buildFile, String srcPDS, String dependencyDatasetMap
 				// obtain target dataset based on Mappings
 				// Order :
 				//    1. langprefix_dependenciesAlternativeLibraryNameMapping based on the library setting recognized by DBB (COBOL and PLI)
-				//    2. langprefix_dependenciesDatasetMapping as a manual overwrite to determine an alternative library used in the default dd concatentation 
-				String dependencyPDS 
+				//    2. langprefix_dependenciesDatasetMapping as a manual overwrite to determine an alternative library used in the default dd concatentation
+				String dependencyPDS
 				if (!physicalDependency.getLibrary().equals("SYSLIB") && dependenciesAlternativeLibraryNameMapping) {
 					dependencyPDS = props.getProperty(evaluate(dependenciesAlternativeLibraryNameMapping).get(physicalDependency.getLibrary()))
 				}
@@ -608,8 +608,8 @@ def generateDb2InfoRecord(String buildFile){
 }
 
 /*
- * Parses and validates the user build dependency file 
- * returns a parsed json object 
+ * Parses and validates the user build dependency file
+ * returns a parsed json object
  */
 def validateDependencyFile(String buildFile, String depFilePath) {
 	String[] allowedEncodings = ["UTF-8", "IBM-1047"]
@@ -646,7 +646,7 @@ def validateDependencyFile(String buildFile, String depFilePath) {
 /*
  * Validates the current Dbb Toolkit version
  * exits the process, if it does not meet the minimum required version of zAppBuild.
- * 
+ *
  */
 def assertDbbBuildToolkitVersion(String currentVersion, String requiredVersion){
 
@@ -677,7 +677,7 @@ def assertDbbBuildToolkitVersion(String currentVersion, String requiredVersion){
 
 /*
  * Returns a string representation of a file's encoding calculated from its tag.
- * 
+ *
  */
 def retrieveHFSFileEncoding(File file) {
 	FileAttribute.Stat stat = FileAttribute.getStat(file.getAbsolutePath())
@@ -699,7 +699,7 @@ def retrieveHFSFileEncoding(File file) {
 
 /*
  * Logs the resolution rules of the DependencyResolver in a table format
- * 
+ *
  */
 def printResolutionRules(List<ResolutionRule> rules) {
 
@@ -763,7 +763,7 @@ def loadFileLevelPropertiesFromFile(List<String> buildList) {
 	buildList.each { String buildFile ->
 
 		// check for file level overwrite
-		if (props.getFileProperty('loadFileLevelProperties', buildFile).toBoolean()) {
+		if (props.getFileProperty('loadFileLevelProperties', buildFile) && props.getFileProperty('loadFileLevelProperties', buildFile).toBoolean()) {
 
 			String member = new File(buildFile).getName()
 			String propertyFilePath = props.getFileProperty('propertyFilePath', buildFile)
