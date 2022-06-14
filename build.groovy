@@ -535,11 +535,11 @@ def createBuildList() {
 		impactUtils.updateCollection(buildList, null, null, repositoryClient)
 	}
 	
-	if (props.getFileProperty('loadFileLevelProperties', buildFile) && props.getFileProperty('loadFileLevelProperties', buildFile).toBoolean()) {
+	if (props.loadFileLevelProperties) {
                 // Loading file/member level properties from member specific properties files
 	        println "** Populate file level properties from individual property files."
 	        buildUtils.loadFileLevelPropertiesFromFile(buildList)
-        }
+	}
 
 	return [buildList, deleteList]
 }

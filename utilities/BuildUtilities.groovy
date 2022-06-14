@@ -763,7 +763,7 @@ def loadFileLevelPropertiesFromFile(List<String> buildList) {
 	buildList.each { String buildFile ->
 
 		// check for file level overwrite
-		if (props.getFileProperty('loadFileLevelProperties', buildFile) && props.getFileProperty('loadFileLevelProperties', buildFile).toBoolean()) {
+		if (props.loadFileLevelProperties && props.getFileProperty('loadFileLevelProperties', buildFile).toBoolean()) {
 
 			String member = new File(buildFile).getName()
 			String propertyFilePath = props.getFileProperty('propertyFilePath', buildFile)
