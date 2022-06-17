@@ -329,10 +329,19 @@ def createDependencyResolver(String buildFile, String rules) {
 	DependencyResolver resolver = new DependencyResolver().file(buildFile)
 			.sourceDir(props.workspace)
 	
-	// add scanner if userBuild Dep File not provided, or not a user build
-	if (!props.userBuildDependencyFile || !props.userBuild)
+	
+	if (props.userBuildDependencyFile && props.userBuild) {
+		// Manually create logical file for the user build program
+		def depFileData = validateDependencyFile(buildFile, props.userBuildDependencyFile)
+		String lname = CopyToPDS.createMemberName(buildFile)
+		String language = props.getFileProperty('dbb.DependencyScanner.languageHint', buildFile) ?: 'UNKN'
+		LogicalFile lfile = new LogicalFile(lname, buildFile, language, depFileData.isCICS, depFileData.isSQL, depFileData.isDLI)
+	}
+	else {
+		// add scanner if userBuild Dep File not provided, or not a user build
 		resolver.setScanner(getScanner(buildFile))
-
+	}
+	
 	// add resolution rules
 	if (rules)
 		resolver.setResolutionRules(parseResolutionRules(rules))
