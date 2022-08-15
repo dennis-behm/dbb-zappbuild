@@ -75,6 +75,8 @@ sortedList.each { buildFile ->
 	File logFile = new File( props.userBuild ? "${props.buildOutDir}/${member}.log" : "${props.buildOutDir}/${member}.cobol.log")
 	if (logFile.exists())
 		logFile.delete()
+	
+	MVSExec db2precompile = createDb2PrecompileCommand(buildFile, logicalFile, member, logFile)	
 	MVSExec compile = createCompileCommand(buildFile, logicalFile, member, logFile)
 	MVSExec linkEdit = createLinkEditCommand(buildFile, logicalFile, member, logFile)
 
@@ -82,6 +84,27 @@ sortedList.each { buildFile ->
 	MVSJob job = new MVSJob()
 	job.start()
 
+	// SQL preprocessor
+	if (buildUtils.isSQL(logicalFile)){
+		rc = db2precompile.execute()
+		int maxPreCompRC = props.getFileProperty('cobol_db2PrecompileMaxRC', buildFile).toInteger()
+		
+		if (rc > maxPreCompRC) {
+			String errorMsg = "*! The sql precompile return code ($rc) for $buildFile exceeded the maximum return code allowed ($maxPreCompRC)"
+			println(errorMsg)
+			props.error = "true"
+			buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile],client:getRepositoryClient())
+			System.exit(0)
+		} else {
+			// Store db2 bind information as a generic property record in the BuildReport
+			String generateDb2BindInfoRecord = props.getFileProperty('generateDb2BindInfoRecord', buildFile)
+			if (generateDb2BindInfoRecord.toBoolean()){
+				PropertiesRecord db2BindInfoRecord = buildUtils.generateDb2InfoRecord(buildFile)
+				BuildReportFactory.getBuildReport().addRecord(db2BindInfoRecord)
+			}
+		}
+	}
+	
 	// compile the cobol program
 	int rc = compile.execute()
 	int maxRC = props.getFileProperty('cobol_compileMaxRC', buildFile).toInteger()
@@ -186,6 +209,42 @@ def createCobolParms(String buildFile, LogicalFile logicalFile) {
 	return parms
 }
 
+
+def createDb2PrecompileCommand(String buildFile, LogicalFile logicalFile, String member, File logFile) {
+	
+		String cobol_db2precompiler = props.getFileProperty('cobol_db2precompiler', buildFile)
+		String cobol_db2precompilerParms = props.getFileProperty('cobol_db2precompilerParms', buildFile)
+		
+				
+		MVSExec cobol_SQLtranslator = new MVSExec().file(buildFile).pgm(cobol_db2precompiler).parm(cobol_db2precompilerParms)
+	
+		// add DD statements to the compile command
+		String cobol_srcPDS = props.getFileProperty('cobol_srcPDS', buildFile)
+	
+		// input file
+		cobol_SQLtranslator.dd(new DDStatement().name("SYSIN").dsn("${cobol_srcPDS}($member)").options('shr'))
+	
+		// outputs dbrmlib + temp dataset
+		cobol_SQLtranslator.dd(new DDStatement().name("DBRMLIB").dsn("$props.cobol_dbrmPDS($member)").options('shr').output(true).deployType('DBRM'))
+		cobol_SQLtranslator.dd(new DDStatement().name("SYSCIN").dsn("&&SYSCIN").options('cyl space(5,5) unit(vio) new').pass(true))
+	
+		// steplib
+		cobol_SQLtranslator.dd(new DDStatement().name("TASKLIB").dsn(props.SDSNLOAD).options("shr"))
+	
+		cobol_SQLtranslator.dd(new DDStatement().name("SYSUT1").options(props.cobol_tempOptions))
+		cobol_SQLtranslator.dd(new DDStatement().name("SYSUT2").options(props.cobol_tempOptions))
+		
+			
+		// sysprint
+		cobol_SQLtranslator.dd(new DDStatement().name("SYSPRINT").options(props.cobol_tempOptionsTranslator))
+	
+		// add a copy command to the compile command to copy the SYSPRINT from the temporary dataset to an HFS log file
+		cobol_SQLtranslator.copy(new CopyToHFS().ddName("SYSPRINT").file(logFile).hfsEncoding(props.logEncoding).append(true))
+	
+		return cobol_SQLtranslator
+	}
+	
+
 /*
  * createCompileCommand - creates a MVSExec command for compiling the COBOL program (buildFile)
  */
@@ -199,11 +258,16 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 	// add DD statements to the compile command
 	
 	if (isZUnitTestCase){
-	compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_testcase_srcPDS}($member)").options('shr').report(true))
+		compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_testcase_srcPDS}($member)").options('shr').report(true))
 	}
 	else
 	{
-		compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_srcPDS}($member)").options('shr').report(true))
+		if (buildUtils.isSQL(logicalFile)) { // Use ddname list to pass in the precompiled code
+			compile.setDdnames("SYSLIN,,,SYSLIB,SYSCIN,SYSPRINT,SYSPUNCH,SYSUT1,SYSUT2,SYSUT3,SYSUT4,SYSTERM,SYSUT5,SYSUT6,SYSUT7,SYSADATA,,,SYSMDECK")
+		} else {
+			// all other cases
+			compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_srcPDS}($member)").options('shr').report(true))
+		}
 	}
 	
 	compile.dd(new DDStatement().name("SYSPRINT").options(props.cobol_printTempOptions))
@@ -287,8 +351,9 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 		compile.dd(new DDStatement().dsn(props.SFELLOAD).options("shr"))
 
 	// add optional DBRMLIB if build file contains DB2 code
-	if (buildUtils.isSQL(logicalFile))
-		compile.dd(new DDStatement().name("DBRMLIB").dsn("$props.cobol_dbrmPDS($member)").options('shr').output(true).deployType('DBRM'))
+		// see precompile step
+	// if (buildUtils.isSQL(logicalFile))
+		//compile.dd(new DDStatement().name("DBRMLIB").dsn("$props.cobol_dbrmPDS($member)").options('shr').output(true).deployType('DBRM'))
 
 	// add IDz User Build Error Feedback DDs
 	if (props.errPrefix) {
@@ -298,7 +363,7 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 	}
 
 	// add a copy command to the compile command to copy the SYSPRINT from the temporary dataset to an HFS log file
-	compile.copy(new CopyToHFS().ddName("SYSPRINT").file(logFile).hfsEncoding(props.logEncoding))
+	compile.copy(new CopyToHFS().ddName("SYSPRINT").file(logFile).hfsEncoding(props.logEncoding).append(true))
 
 	return compile
 }
