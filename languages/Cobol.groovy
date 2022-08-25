@@ -331,11 +331,14 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 		if (lnkFile.exists())
 			lnkFile.delete()
 
-		if 	(linkEditStream)
+		if 	(linkEditStream) {
 			lnkFile << "  " + linkEditStream.replace("\\n","\n").replace('@{member}',member)
-		else
+			lnkFile << "  " + "INDENTIFY $member('"+buildUtils.getShortGitHash(buildFile) +"')"
+		}
+			
+		else {
 			lnkFile << "  " + linkDebugExit.replace("\\n","\n").replace('@{member}',member)
-
+		}
 		if (props.verbose)
 			println("Copying ${props.buildOutDir}/linkCard.lnk to ${props.linkedit_srcPDS}($member)")
 		new CopyToPDS().file(lnkFile).dataset(props.linkedit_srcPDS).member(member).execute()
