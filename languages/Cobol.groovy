@@ -333,7 +333,7 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 
 		if 	(linkEditStream) {
 			lnkFile << "  " + linkEditStream.replace("\\n","\n").replace('@{member}',member)
-			lnkFile << "  " + "\nINDENTIFY $member('"+buildUtils.getShortGitHash(buildFile) +"')"
+			lnkFile << "  " + "\n   IDENTIFY $member('"+buildUtils.getShortGitHash(buildFile) +"')"
 		}
 			
 		else {
