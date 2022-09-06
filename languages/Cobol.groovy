@@ -75,7 +75,7 @@ sortedList.each { buildFile ->
 	File logFile = new File( props.userBuild ? "${props.buildOutDir}/${member}.log" : "${props.buildOutDir}/${member}.cobol.log")
 	if (logFile.exists())
 		logFile.delete()
-	
+	MVSExec cobolprecompile = createCobolPreCompileCommand(buildFile, logicalFile, member, logFile)
 	MVSExec db2precompile = createDb2PrecompileCommand(buildFile, logicalFile, member, logFile)	
 	MVSExec compile = createCompileCommand(buildFile, logicalFile, member, logFile)
 	MVSExec linkEdit = createLinkEditCommand(buildFile, logicalFile, member, logFile)
@@ -84,6 +84,8 @@ sortedList.each { buildFile ->
 	MVSJob job = new MVSJob()
 	job.start()
 
+	cobolprecompile.execute()
+	
 	// SQL preprocessor
 	if (buildUtils.isSQL(logicalFile)){
 		rc = db2precompile.execute()
@@ -222,7 +224,9 @@ def createDb2PrecompileCommand(String buildFile, LogicalFile logicalFile, String
 		String cobol_srcPDS = props.getFileProperty('cobol_srcPDS', buildFile)
 	
 		// input file
-		cobol_SQLtranslator.dd(new DDStatement().name("SYSIN").dsn("${cobol_srcPDS}($member)").options('shr'))
+		cobol_SQLtranslator.setDdnames(",,,,SYSMDECK,,,,,,,,,,,,,,")
+		
+		//cobol_SQLtranslator.dd(new DDStatement().name("SYSIN").dsn("${cobol_srcPDS}($member)").options('shr'))
 	
 		// outputs dbrmlib + temp dataset
 		cobol_SQLtranslator.dd(new DDStatement().name("DBRMLIB").dsn("$props.cobol_dbrmPDS($member)").options('shr').output(true).deployType('DBRM'))
@@ -245,6 +249,121 @@ def createDb2PrecompileCommand(String buildFile, LogicalFile logicalFile, String
 	}
 	
 
+	def createCobolPreCompileCommand(String buildFile, LogicalFile logicalFile, String member, File logFile) {
+		String parms = createCobolParms(buildFile, logicalFile)
+		String compiler = props.getFileProperty('cobol_compiler', buildFile)
+	
+		// define the MVSExec command to compile the program
+		MVSExec compile = new MVSExec().file(buildFile).pgm(compiler).parm("MDECK(NOCOMPILE),CICS")
+	
+		// add DD statements to the compile command
+		
+		if (isZUnitTestCase){
+			compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_testcase_srcPDS}($member)").options('shr').report(true))
+		}
+		else
+		{
+				compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_srcPDS}($member)").options('shr').report(true))
+		}
+		
+		compile.dd(new DDStatement().name("SYSPRINT").options(props.cobol_printTempOptions))
+		compile.dd(new DDStatement().name("SYSMDECK").dsn("&&SYSMDCK").options(props.cobol_tempOptions).pass(true))
+		(1..17).toList().each { num ->
+			compile.dd(new DDStatement().name("SYSUT$num").options(props.cobol_tempOptions))
+		}
+	
+		// Write SYSLIN to temporary dataset if performing link edit or to physical dataset
+		String doLinkEdit = props.getFileProperty('cobol_linkEdit', buildFile)
+		String linkEditStream = props.getFileProperty('cobol_linkEditStream', buildFile)
+		String linkDebugExit = props.getFileProperty('cobol_linkDebugExit', buildFile)
+	
+		if (props.debug && linkDebugExit && doLinkEdit.toBoolean()){
+			compile.dd(new DDStatement().name("SYSLIN").dsn("${props.cobol_objPDS}($member)").options('shr').output(true))
+		} else if (doLinkEdit && doLinkEdit.toBoolean() && ( !linkEditStream || linkEditStream.isEmpty())) {
+			compile.dd(new DDStatement().name("SYSLIN").dsn("&&TEMPOBJ").options(props.cobol_tempOptions).pass(true))
+		} else {
+			compile.dd(new DDStatement().name("SYSLIN").dsn("${props.cobol_objPDS}($member)").options('shr').output(true))
+		}
+	
+		// add a syslib to the compile command with optional bms output copybook and CICS concatenation
+		compile.dd(new DDStatement().name("SYSLIB").dsn(props.cobol_cpyPDS).options("shr"))
+		// adding bms copybook libraries only when it exists
+		if (props.bms_cpyPDS && ZFile.dsExists("'${props.bms_cpyPDS}'"))
+			compile.dd(new DDStatement().dsn(props.bms_cpyPDS).options("shr"))
+		if(props.team)
+			compile.dd(new DDStatement().dsn(props.cobol_BMS_PDS).options("shr"))
+		
+		// add additional datasets with dependencies based on the dependenciesDatasetMapping
+		PropertyMappings dsMapping = new PropertyMappings('cobol_dependenciesDatasetMapping')
+		dsMapping.getValues().each { targetDataset ->
+			// exclude the defaults cobol_cpyPDS and any overwrite in the alternativeLibraryNameMap
+			if (targetDataset != 'cobol_cpyPDS')
+				compile.dd(new DDStatement().dsn(props.getProperty(targetDataset)).options("shr"))
+		}
+	
+		// add custom concatenation
+		def compileSyslibConcatenation = props.getFileProperty('cobol_compileSyslibConcatenation', buildFile) ?: ""
+		if (compileSyslibConcatenation) {
+			def String[] syslibDatasets = compileSyslibConcatenation.split(',');
+			for (String syslibDataset : syslibDatasets )
+			compile.dd(new DDStatement().dsn(syslibDataset).options("shr"))
+		}
+		if (buildUtils.isCICS(logicalFile))
+			compile.dd(new DDStatement().dsn(props.SDFHCOB).options("shr"))
+		String isMQ = props.getFileProperty('cobol_isMQ', buildFile)
+		if (isMQ && isMQ.toBoolean())
+			compile.dd(new DDStatement().dsn(props.SCSQCOBC).options("shr"))
+			
+		// add additional zunit libraries
+		if (isZUnitTestCase)
+		compile.dd(new DDStatement().dsn(props.SBZUSAMP).options("shr"))
+	
+		// adding alternate library definitions
+		if (props.cobol_dependenciesAlternativeLibraryNameMapping) {
+			alternateLibraryNameAllocations = buildUtils.parseJSONStringToMap(props.cobol_dependenciesAlternativeLibraryNameMapping)
+			alternateLibraryNameAllocations.each { libraryName, datasetDefinition ->
+				datasetName = props.getProperty(datasetDefinition)
+				if (datasetName) {
+					compile.dd(new DDStatement().name(libraryName).dsn(datasetName).options("shr"))
+				}
+				else {
+					String errorMsg = "*! Cobol.groovy. The dataset definition $datasetDefinition could not be resolved from the DBB Build properties."
+					println(errorMsg)
+					props.error = "true"
+					buildUtils.updateBuildResult(errorMsg:errorMsg,client:getRepositoryClient())
+				}
+			}
+		}
+		
+		// add a tasklib to the compile command with optional CICS, DB2, and IDz concatenations
+		String compilerVer = props.getFileProperty('cobol_compilerVersion', buildFile)
+		compile.dd(new DDStatement().name("TASKLIB").dsn(props."SIGYCOMP_$compilerVer").options("shr"))
+		if (buildUtils.isCICS(logicalFile))
+			compile.dd(new DDStatement().dsn(props.SDFHLOAD).options("shr"))
+		if (buildUtils.isSQL(logicalFile))
+			compile.dd(new DDStatement().dsn(props.SDSNLOAD).options("shr"))
+		
+		if (props.SFELLOAD)
+			compile.dd(new DDStatement().dsn(props.SFELLOAD).options("shr"))
+	
+		// add optional DBRMLIB if build file contains DB2 code
+			// see precompile step
+		// if (buildUtils.isSQL(logicalFile))
+			//compile.dd(new DDStatement().name("DBRMLIB").dsn("$props.cobol_dbrmPDS($member)").options('shr').output(true).deployType('DBRM'))
+	
+		// add IDz User Build Error Feedback DDs
+		if (props.errPrefix) {
+			compile.dd(new DDStatement().name("SYSADATA").options("DUMMY"))
+			// SYSXMLSD.XML suffix is mandatory for IDZ/ZOD to populate remote error list
+			//compile.dd(new DDStatement().name("SYSXMLSD").dsn("${props.hlq}.${props.errPrefix}.SYSXMLSD.XML").options(props.cobol_compileErrorFeedbackXmlOptions))
+		}
+	
+		// add a copy command to the compile command to copy the SYSPRINT from the temporary dataset to an HFS log file
+		compile.copy(new CopyToHFS().ddName("SYSPRINT").file(logFile).hfsEncoding(props.logEncoding).append(true))
+	
+		return compile
+	}
+	
 /*
  * createCompileCommand - creates a MVSExec command for compiling the COBOL program (buildFile)
  */
@@ -271,7 +390,7 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 	}
 	
 	compile.dd(new DDStatement().name("SYSPRINT").options(props.cobol_printTempOptions))
-	compile.dd(new DDStatement().name("SYSMDECK").options(props.cobol_tempOptions))
+	//compile.dd(new DDStatement().name("SYSMDECK").options(props.cobol_tempOptions))
 	(1..17).toList().each { num ->
 		compile.dd(new DDStatement().name("SYSUT$num").options(props.cobol_tempOptions))
 	}
