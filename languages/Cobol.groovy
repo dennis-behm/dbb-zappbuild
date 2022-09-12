@@ -47,7 +47,8 @@ sortedList.each { buildFile ->
 
 	// configure appropriate dependency resolver
 	def dependencyResolver
-	if (buildUtils.useSearchPathAPI() && props.cobol_dependencySearch) { // use new SearchPathDependencyResolver
+	if (buildUtils.useSearchPathAPI()) { // use new SearchPathDependencyResolver
+		buildUtils.assertBuildProperties("cobol_dependencySearch")
 		String dependencySearch = props.getFileProperty('cobol_dependencySearch', buildFile)
 		dependencyResolver = resolverUtils.createSearchPathDependencyResolver(dependencySearch)
 	} else { // use deprecated DependencyResolver
