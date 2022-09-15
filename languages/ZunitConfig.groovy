@@ -62,9 +62,9 @@ buildUtils.createLanguageDatasets(langQualifier)
 	}
 	
 	// Parse the playback from the bzucfg file
-	boolean hasPlayback = false
-	LogicalDependency playbackFile
-	(hasPlayback, playbackFile) = getPlaybackFile(logicalFile);
+	Boolean hasPlayback = false
+ 	String playback
+ 	(hasPlayback, playback) = getPlaybackFile(buildFile);
 	
 	// Create JCLExec String
 	String jobcard = props.jobCard.replace("\\n", "\n")
@@ -248,17 +248,13 @@ def getRepositoryClient() {
 /*
  * returns containsPlayback, 
  */
-def getPlaybackFile(LogicalFile logicalFile) {
-	
-	// find playback file dependency
-	LogicalDependency playbackDependency = logicalFile.getLogicalDependencies().find {
-		it.getLibrary() == "SYSPLAY"
-	}
-	
-	if (playbackDependency) {
-		return [true, playbackDependency]
-	} 
-}
+def getPlaybackFile(String xmlFile) {
+ 	String xml = new File(buildUtils.getAbsolutePath(xmlFile)).getText("IBM-1047")
+ 	def parser = new XmlParser().parseText(xml)
+ 	if (parser.'runner:playback'.playbackFile.size()==0) return [false, null]
+ 	else {
+ 		String playbackFileName = parser.'runner:playback'.@moduleName[0]
+ 		return [true, playbackFileName]
 
 /**
  *  Parsing the result file and prints summary of the result
