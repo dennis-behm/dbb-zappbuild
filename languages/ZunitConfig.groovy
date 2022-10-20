@@ -63,8 +63,8 @@ buildUtils.createLanguageDatasets(langQualifier)
 	
 	// Parse the playback from the bzucfg file
 	Boolean hasPlayback = false
- 	String playback
- 	(hasPlayback, playback) = getPlaybackFile(buildFile);
+	String playback
+	(hasPlayback, playback) = getPlaybackFile(buildFile);
 	
 	// Create JCLExec String
 	String jobcard = props.jobCard.replace("\\n", "\n")
@@ -90,7 +90,7 @@ jcl += """\
 	if (hasPlayback) { // bzucfg contains reference to a playback file
 		jcl +=
 		"//REPLAY.BZUPLAY DD DISP=SHR, \n" +
-		"// DSN=${props.zunit_bzuplayPDS}(${playbackFile.getLname()}) \n"
+		"// DSN=${props.zunit_bzuplayPDS}(${playback}) \n"
 	} else { // no playbackfile referenced
 		jcl +=
 		"//REPLAY.BZUPLAY DD DUMMY   \n"
@@ -249,12 +249,14 @@ def getRepositoryClient() {
  * returns containsPlayback, 
  */
 def getPlaybackFile(String xmlFile) {
- 	String xml = new File(buildUtils.getAbsolutePath(xmlFile)).getText("IBM-1047")
- 	def parser = new XmlParser().parseText(xml)
- 	if (parser.'runner:playback'.playbackFile.size()==0) return [false, null]
- 	else {
- 		String playbackFileName = parser.'runner:playback'.@moduleName[0]
- 		return [true, playbackFileName]
+	String xml = new File(buildUtils.getAbsolutePath(xmlFile)).getText("IBM-1047")
+	def parser = new XmlParser().parseText(xml)
+	if (parser.'runner:playback'.playbackFile.size()==0) return [false, null]
+	else {
+		String playbackFileName = parser.'runner:playback'.@moduleName[0]
+		return [true, playbackFileName]
+	}
+}
 
 /**
  *  Parsing the result file and prints summary of the result
