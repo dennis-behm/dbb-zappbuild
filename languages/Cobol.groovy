@@ -224,7 +224,7 @@ def createDb2PrecompileCommand(String buildFile, LogicalFile logicalFile, String
 		String cobol_srcPDS = props.getFileProperty('cobol_srcPDS', buildFile)
 	
 		// input file
-		cobol_SQLtranslator.setDdnames(",,,,SYSMDECK,,,,,,,,,,,,,,")
+		cobol_SQLtranslator.setDdnames(",,,,SYSMDECK,SYSPRINT,,SYSUT1,,,,,,SYSCIN,,DBRMLIB")
 		
 		//cobol_SQLtranslator.dd(new DDStatement().name("SYSIN").dsn("${cobol_srcPDS}($member)").options('shr'))
 	
@@ -400,13 +400,13 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 	String linkEditStream = props.getFileProperty('cobol_linkEditStream', buildFile)
 	String linkDebugExit = props.getFileProperty('cobol_linkDebugExit', buildFile)
 
-	if (props.debug && linkDebugExit && doLinkEdit.toBoolean()){
-		compile.dd(new DDStatement().name("SYSLIN").dsn("${props.cobol_objPDS}($member)").options('shr').output(true))
-	} else if (doLinkEdit && doLinkEdit.toBoolean() && ( !linkEditStream || linkEditStream.isEmpty())) {
-		compile.dd(new DDStatement().name("SYSLIN").dsn("&&TEMPOBJ").options(props.cobol_tempOptions).pass(true))
-	} else {
-		compile.dd(new DDStatement().name("SYSLIN").dsn("${props.cobol_objPDS}($member)").options('shr').output(true))
-	}
+//	if (props.debug && linkDebugExit && doLinkEdit.toBoolean()){
+//		compile.dd(new DDStatement().name("SYSLIN").dsn("${props.cobol_objPDS}($member)").options('shr').output(true))
+//	} else if (doLinkEdit && doLinkEdit.toBoolean() && ( !linkEditStream || linkEditStream.isEmpty())) {
+//		compile.dd(new DDStatement().name("SYSLIN").dsn("&&TEMPOBJ").options(props.cobol_tempOptions).pass(true))
+//	} else {
+//		compile.dd(new DDStatement().name("SYSLIN").dsn("${props.cobol_objPDS}($member)").options('shr').output(true))
+//	}
 
 	// add a syslib to the compile command with optional bms output copybook and CICS concatenation
 	compile.dd(new DDStatement().name("SYSLIB").dsn(props.cobol_cpyPDS).options("shr"))
