@@ -18,7 +18,7 @@ List<String> buildList = argMap.buildList
 
 // iterate through build list
 buildList.each { buildFile ->
-	println "*** Transferring file $buildFile"
+	println "*** Documenting changed file $buildFile in DBB Build report"
 
 	// local variables and log file
 	String member = CopyToPDS.createMemberName(buildFile)
