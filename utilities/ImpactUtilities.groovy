@@ -906,7 +906,12 @@ def saveStaticLinkDependencies(String buildFile, String loadPDS, LogicalFile log
 	if (metadataStore && !props.error) {
 		LinkEditScanner scanner = new LinkEditScanner()
 		if (props.verbose) println "*** Scanning load module for $buildFile"
-		LogicalFile scannerLogicalFile = scanner.scan(buildUtils.relativizePath(buildFile), loadPDS)
+		
+		def member = CopyToPDS.createMemberName(buildFile)
+		def outputMember = props.getFileProperty('cobol_alternateOutputName', buildFile) ?: member
+		outputMember = outputMember.replace("\\n","\n").replace('@{member}',member)
+		
+		LogicalFile scannerLogicalFile = scanner.scan(buildUtils.relativizePath(buildFile), loadPDS, outputMember)
 		if (props.verbose) println "*** Logical file = \n$scannerLogicalFile"
 
 		// overwrite original logicalDependencies with load module dependencies

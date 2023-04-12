@@ -335,7 +335,11 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 		linkedit.dd(new DDStatement().name("SYSLMOD").dsn("${props.cobol_testcase_loadPDS}($member)").options('shr').output(true).deployType('ZUNIT-TESTCASE'))
 	}
 	else {
-		linkedit.dd(new DDStatement().name("SYSLMOD").dsn("${props.cobol_loadPDS}($member)").options('shr').output(true).deployType(deployType))
+		
+		def outputMember = props.getFileProperty('cobol_alternateOutputName', buildFile) ?: member
+		outputMember = outputMember.replace("\\n","\n").replace('@{member}',member)
+		
+		linkedit.dd(new DDStatement().name("SYSLMOD").dsn("${props.cobol_loadPDS}($outputMember)").options('shr').output(true).deployType(deployType))
 	}
 	linkedit.dd(new DDStatement().name("SYSPRINT").options(props.cobol_printTempOptions))
 	linkedit.dd(new DDStatement().name("SYSUT1").options(props.cobol_tempOptions))
