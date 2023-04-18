@@ -332,11 +332,10 @@ def populateBuildProperties(def opts) {
 
 
 	// load application.properties
-	String appConfRootDir = props.applicationConfRootDir ?: props.workspace
-	if (!appConfRootDir.endsWith('/'))
-		appConfRootDir = "${appConfRootDir}/"
-
-	String appConf = "${appConfRootDir}${props.application}/application-conf"
+	String appConf = props.applicationConfDir
+	if (!appConf.endsWith('/'))
+		appConf = "${appConf}/"
+		
 	if (opts.v) println "** appConf = ${appConf}"
 	props.load(new File("${appConf}/application.properties"))
 
