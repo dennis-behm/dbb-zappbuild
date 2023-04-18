@@ -316,7 +316,8 @@ def populateBuildProperties(def opts) {
 
 	// load build.properties
 	def buildConf = "${zAppBuildDir}/build-conf"
-	props.load(new File("${buildConf}/build.properties"))
+	if (opts.v) println "** Loading property file ${buildConf}/build.properties}"
+	buildUtils.loadBuildProperties("${buildConf}/build.properties")
 
 	// load additional build property files
 	if (props.buildPropFiles) {
@@ -326,18 +327,19 @@ def populateBuildProperties(def opts) {
 				propFile = "${buildConf}/${propFile}"
 
 			if (opts.v) println "** Loading property file ${propFile}"
-			props.load(new File(propFile))
+			buildUtils.loadBuildProperties(propFile)
 		}
 	}
 
 
 	// load application.properties
 	String appConf = props.applicationConfDir
-	if (!appConf.endsWith('/'))
-		appConf = "${appConf}/"
+	if (appConf.endsWith('/'))
+		appConf = appConf.substring(0, appConf.length() - 1)
 		
-	if (opts.v) println "** appConf = ${appConf}"
-	props.load(new File("${appConf}/application.properties"))
+	if (opts.v) println "** applicationConfDir = ${appConf}"
+	if (opts.v) println "** Loading property file ${appConf}/application.properties"
+	buildUtils.loadBuildProperties("${appConf}/application.properties")
 
 	// load additional application property files
 	if (props.applicationPropFiles) {
@@ -347,7 +349,7 @@ def populateBuildProperties(def opts) {
 				propFile = "${appConf}/${propFile}"
 
 			if (opts.v) println "** Loading property file ${propFile}"
-			props.load(new File(propFile))
+			buildUtils.loadBuildProperties(propFile)
 		}
 	}
 
@@ -360,7 +362,7 @@ def populateBuildProperties(def opts) {
 				propFile = "${props.workspace}/${propFile}"
 
 			if (opts.v) println "** Loading property file ${propFile}"
-			props.load(new File(propFile))
+			buildUtils.loadBuildProperties(propFile)
 		}
 	}
 	
