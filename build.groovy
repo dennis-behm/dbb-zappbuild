@@ -452,7 +452,7 @@ def populateBuildProperties(def opts) {
 		else
 			props.applicationCurrentBranch = gitUtils.getCurrentGitBranch(gitDir)
 		// set the dbbBuildGroupConfig	
-		props.dbbBuildGroupConfig = props.applicationCurrentBranch
+		if(!props.dbbBuildGroupConfig) props.dbbBuildGroupConfig = props.applicationCurrentBranch
 	}
 	
 	props.applicationBuildGroup = ((props.dbbBuildGroupConfig) ? "${props.application}-${props.dbbBuildGroupConfig}" : "${props.application}") as String
