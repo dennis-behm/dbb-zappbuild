@@ -239,7 +239,11 @@ options:
 	cli.sl(longOpt:'scanLoad', 'Flag indicating to only scan load modules for application without building anything')
 	cli.sa(longOpt:'scanAll', 'Flag indicating to scan both source files and load modules for application without building anything')
 
-	// web application credentials (overrides properties in build.properties)
+	// dbb build group
+	cli.bgc(longOpt:'dbbBuildGroupConfig', args:1, 'DBB build group configuration which is used to name the DBB metadata artifacts collection and build group.')
+	
+	
+	// dbb db2 metadatastore connection credentials (overrides properties in build.properties)
 	cli.url(longOpt:'url', args:1, 'Db2 JDBC URL for the MetadataStore. Example: jdbc:db2:<Db2 server location>')
 	cli.id(longOpt:'id', args:1, 'Db2 user id for the MetadataStore')
 	cli.pw(longOpt:'pw', args:1,  'Db2 password (encrypted with DBB Password Utility) for the MetadataStore')
@@ -395,6 +399,8 @@ def populateBuildProperties(def opts) {
 	if (opts.b) props.baselineRef = opts.b
 	if (opts.m) props.mergeBuild = 'true'
 	
+	if (opts.bgc) props.dbbBuildGroupConfig = opts.bgc
+	
 	// scan options
 	if (opts.s) props.scanOnly = 'true'
 	if (opts.ss) props.scanOnly = 'true'
@@ -445,13 +451,17 @@ def populateBuildProperties(def opts) {
 			props.applicationCurrentBranch = gitUtils.getCurrentGitDetachedBranch(gitDir)
 		else
 			props.applicationCurrentBranch = gitUtils.getCurrentGitBranch(gitDir)
+		// set the dbbBuildGroupConfig	
+		props.dbbBuildGroupConfig = props.applicationCurrentBranch
 	}
+	
+	props.applicationBuildGroup = ((props.dbbBuildGroupConfig) ? "${props.application}-${props.dbbBuildGroupConfig}" : "${props.application}") as String
+	props.applicationCollectionName = ((props.dbbBuildGroupConfig) ? "${props.application}-${props.dbbBuildGroupConfig}" : "${props.application}") as String
+	props.applicationOutputsCollectionName = "${props.applicationCollectionName}-outputs" as String
 
 	props.topicBranchBuild = (props.applicationCurrentBranch.equals(props.mainBuildBranch)) ? null : 'true'
-	props.applicationBuildGroup = ((props.applicationCurrentBranch) ? "${props.application}-${props.applicationCurrentBranch}" : "${props.application}") as String
 	props.applicationBuildLabel = ("build." + ( (props.buildOutputTSformat) ? startTime.format("${props.buildOutputTSformat}") : "${props.startTime}" ) ) as String
-	props.applicationCollectionName = ((props.applicationCurrentBranch) ? "${props.application}-${props.applicationCurrentBranch}" : "${props.application}") as String
-	props.applicationOutputsCollectionName = "${props.applicationCollectionName}-outputs" as String
+
 
 	if (props.userBuild) {	// do not create a subfolder for user builds
 		props.buildOutDir = "${props.outDir}" as String }
