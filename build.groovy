@@ -320,7 +320,7 @@ def populateBuildProperties(def opts) {
 
 	// load build.properties
 	def buildConf = "${zAppBuildDir}/build-conf"
-	if (opts.v) println "** Loading property file ${buildConf}/build.properties}"
+	if (opts.v) println "** Loading property file ${buildConf}/build.properties"
 	buildUtils.loadBuildProperties("${buildConf}/build.properties")
 
 	// load additional build property files
