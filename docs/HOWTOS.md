@@ -1,4 +1,4 @@
-# How-to and Frequently Asked Questions
+[# How-to and Frequently Asked Questions
 
 This page collects information to configure and use specific features of zAppBuild. Available How-tos:
 
@@ -131,4 +131,4 @@ You can go that far to merge the properties defined in `file.properties` into th
 
 If the application does not need to specify any application specifics, zAppBuild executes the build even without finding an `application-conf/application.properties` at the `applicationConfDir` location.
 
-Please note, that moving property files to the central build framework implementation, is excluding the defined properties in these files from the zAppBuild capability to perform impactBuilds on a property change - see `impactBuildOnBuildPropertyChanges` setting at [default](../build-conf/defaultzAppBuildConf.properties).
+Please note, that moving property files to the central build framework implementation, is excluding the defined properties in these files from the zAppBuild capability to perform impactBuilds on a property change - see `impactBuildOnBuildPropertyChanges` setting at [default](../build-conf/defaultzAppBuildConf.properties).](https://github.com/dennis-behm/dbb-zappbuild/edit/399_refactor_application_conf_dir_configuration/docs/HOWTOS.md)https://github.com/dennis-behm/dbb-zappbuild/edit/399_refactor_application_conf_dir_configuration/docs/HOWTOS.md
