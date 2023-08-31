@@ -129,6 +129,6 @@ applicationPropFiles=file.properties
 ```
 Potentially, you could go farther and merge the properties defined in `file.properties` into the `application.properties` file.
 
-If an application doesn't need to specify any application-specific settings, no `applicationConfDir` property is defined for this application and zAppBuild executes the build, even without finding an `application-conf/application.properties` at the `applicationConfDir` location.
+If an application doesn't need to specify any application-specific settings, there is no need to create an `application.properties` file and zAppBuild will execute the build, even without finding the `application.properties` file expected at the `applicationConfDir` location.
 
 Please note that moving property files to the central build framework implementation disables the capability to perform impactBuilds on a property change for these properties - see `impactBuildOnBuildPropertyChanges` setting at [default](../build-conf/defaultzAppBuildConf.properties).
