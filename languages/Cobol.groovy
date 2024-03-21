@@ -13,7 +13,8 @@ import com.ibm.dbb.build.report.records.*
 @Field def buildUtils= loadScript(new File("${props.zAppBuildDir}/utilities/BuildUtilities.groovy"))
 @Field def impactUtils= loadScript(new File("${props.zAppBuildDir}/utilities/ImpactUtilities.groovy"))
 @Field def bindUtils= loadScript(new File("${props.zAppBuildDir}/utilities/BindUtilities.groovy"))
-	
+@Field def builderMigration= loadScript(new File("${props.zAppBuildDir}/utilities/BuilderMigrationUtilities.groovy"))
+
 println("** Building ${argMap.buildList.size()} ${argMap.buildList.size() == 1 ? 'file' : 'files'} mapped to ${this.class.getName()}.groovy script")
 
 // verify required build properties
@@ -133,6 +134,9 @@ sortedList.each { buildFile ->
 		}
 	}
 
+	//builderMigration
+	builderMigration.generateLanguageConfigurationYaml(langQualifier, langQualifier, dependencySearch, [compile, linkEdit])
+	
 	// clean up passed DD statements
 	job.stop()
 }

@@ -8,6 +8,7 @@ import groovy.transform.*
 // define script properties
 @Field BuildProperties props = BuildProperties.getInstance()
 @Field def buildUtils= loadScript(new File("${props.zAppBuildDir}/utilities/BuildUtilities.groovy"))
+@Field def builderMigration= loadScript(new File("${props.zAppBuildDir}/utilities/BuilderMigrationUtilities.groovy"))
 
 println("** Building ${argMap.buildList.size()} ${argMap.buildList.size() == 1 ? 'file' : 'files'} mapped to ${this.class.getName()}.groovy script")
 
@@ -51,6 +52,10 @@ sortedList.each { buildFile ->
 		buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile])
 	 }
 	
+	 //builderMigration
+	 builderMigration.generateLanguageConfigurationYaml(langQualifier, langQualifier, "none", [copyGen,compile,linkEdit])
+ 
+	 
 }
 
 // end script
