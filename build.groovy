@@ -11,6 +11,7 @@ import groovy.time.*
 import groovy.xml.*
 import groovy.cli.commons.*
 
+println args
 
 // define script properties
 @Field BuildProperties props = BuildProperties.getInstance()
@@ -53,15 +54,25 @@ if (buildList.size() == 0)
 	println("*! No files in build list.  Nothing to do.")
 else {
 	if (!props.scanOnly && !props.scanLoadmodules) {
-		println("** Invoking build scripts according to build order: ${props.buildOrder}")
-		String[] buildOrderList = props.buildOrder.split(',')
-		String[] testOrderList;
-		if (props.runzTests && props.runzTests.toBoolean()) {
-			println("** Invoking test scripts according to test order: ${props.testOrder}")
-			testOrderList = props.testOrder.split(',')
+
+		String[] scriptOrder
+
+		if (!props.generate) {
+			println("** Invoking build scripts according to build order: ${props.buildOrder}")
+			String[] buildOrderList = props.buildOrder.split(',')
+			scriptOrder = buildOrderList
+
+			if (props.runzTests && props.runzTests.toBoolean()) {
+				println("** Invoking test scripts according to test order: ${props.testOrder}")
+				String[] testOrderList = props.testOrder.split(',')
+				buildOrder = buildOrderList + testOrderList
+			}
+		} else {
+			println("** Invoking language scripts according to generate order: ${props.generateOrder}")
+			scriptOrder = props.generateOrder.split(',')
 		}
-		buildOrder = buildOrderList + testOrderList
-		buildOrder.each { script ->
+
+		scriptOrder.each { script ->
 			scriptPath = script
 			// Use the ScriptMappings class to get the files mapped to the build script
 			def buildFiles = ScriptMappings.getMappedList(script, buildList)
@@ -269,6 +280,9 @@ options:
 	cli.v(longOpt:'verbose', 'Flag to turn on script trace')
 	cli.pv(longOpt:'preview', 'Supplemental flag indicating to run build in preview mode without processing the execute commands')
 	
+	// generate intermediate outputs
+	cli.ge(longOpt:'generate', 'Flag indicating to generate artifacts such as BMS copybooks.')
+	
 	// scan options
 	cli.s(longOpt:'scanOnly', 'Flag indicating to only scan source files for application without building anything (deprecated use --scanSource)')
 	cli.ss(longOpt:'scanSource', 'Flag indicating to only scan source files for application without building anything')
@@ -456,7 +470,9 @@ def populateBuildProperties(def opts) {
 	if (opts.b) props.baselineRef = opts.b
 	if (opts.m) props.mergeBuild = 'true'
 	if (opts.pv) props.preview = 'true'
-		
+	
+	if (opts.ge) props.generate = 'true'	
+	
 	// scan options
 	if (opts.s) props.scanOnly = 'true'
 	if (opts.ss) props.scanOnly = 'true'
@@ -510,10 +526,18 @@ def populateBuildProperties(def opts) {
 	}
 
 	props.topicBranchBuild = (props.applicationCurrentBranch.equals(props.mainBuildBranch)) ? null : 'true'
-	props.applicationBuildGroup = ((props.applicationCurrentBranch) ? "${props.application}-${props.applicationCurrentBranch}" : "${props.application}") as String
 	props.applicationBuildLabel = ("build.${props.startTime}") as String
+	
+	// set collection names
 	props.applicationCollectionName = ((props.applicationCurrentBranch) ? "${props.application}-${props.applicationCurrentBranch}" : "${props.application}") as String
-	props.applicationOutputsCollectionName = "${props.applicationCollectionName}-outputs" as String
+	if (props.generate && props.generate.toBoolean()) { // use a separate collection and build group to maintain a build history for generated artifacts
+		props.applicationCollectionName = "${props.applicationCollectionName}-gen" as String
+	}
+	props.applicationOutputsCollectionName = "${props.applicationCollectionName}-outputs" as String // output collection for link dependencies observed by DBBs LinkEditScanner
+	
+	// set build group name
+	props.applicationBuildGroup = ((props.applicationCurrentBranch) ? "${props.application}-${props.applicationCurrentBranch}" : "${props.application}") as String
+	
 
 	if (props.userBuild) {	// do not create a subfolder for user builds
 		props.buildOutDir = "${props.outDir}" as String }
@@ -526,7 +550,10 @@ def populateBuildProperties(def opts) {
 
 	// Validate Build Properties  
 	if(props.reportExternalImpactsAnalysisDepths) assert (props.reportExternalImpactsAnalysisDepths == 'simple' || props.reportExternalImpactsAnalysisDepths == 'deep' ) : "*! Build Property props.reportExternalImpactsAnalysisDepths has an invalid value"
+	
 	if(props.baselineRef) assert (props.impactBuild) : "*! Build Property props.baselineRef is exclusive to an impactBuild scenario"
+
+	if(props.generate) assert (props.generateOrder) : "*! Build Property generateOrder is a mandatory configuration to an generate scenario"
 	
 	// Print all build properties + some envionment variables 
 	if (props.verbose) {
