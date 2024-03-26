@@ -340,7 +340,8 @@ def updateBuildResult(Map args) {
 		if (args.errorMsg) {
 			buildResult.setStatus(buildResult.ERROR)
 			buildResult.addProperty("error", args.errorMsg)
-
+			errorSummary = (props.errorSummary) ?  "${props.errorSummary}   ${args.errorMsg}\n" : "   ${args.errorMsg}\n"
+			props.put("errorSummary", "$errorSummary")
 		}
 
 		// add warning message, but keep result status
@@ -592,8 +593,8 @@ def retrieveLastBuildResult(){
 
 	if (lastBuildResult == null && props.topicBranchBuild){
 		// if this is the first topic branch build get the main branch build result
-		if (props.verbose) println "** No previous successful topic branch build result. Retrieving last successful main branch build result."
 		String mainBranchBuildGroup = "${props.application}-${props.mainBuildBranch}"
+		if (props.verbose) println "** No previous successful topic branch build result. Retrieving last successful build result from the main build branch group (${mainBranchBuildGroup})."
 		lastBuildResult = metadataStore.getLastBuildResult(mainBranchBuildGroup, BuildResult.COMPLETE, BuildResult.CLEAN)
 	}
 
@@ -897,17 +898,21 @@ def generateIdentifyStatement(String buildFile, String dsProperty) {
 		String shortGitHash = getShortGitHash(buildFile)
 
 		if (shortGitHash != null) {
-
 			String identifyString = props.application + "/" + shortGitHash
 			//   IDENTIFY EPSCSMRT('MortgageApplication/abcabcabc')
-			identifyStmt = "  " + "IDENTIFY ${member}(\'$identifyString\')"
+			identifyStmt = " " + "IDENTIFY ${member}(\'$identifyString\')"
 			if (identifyString.length() > maxRecordLength) {
 				String errorMsg = "*!* BuildUtilities.generateIdentifyStatement() - Identify string exceeds $maxRecordLength chars: identifyStmt=$identifyStmt"
 				println(errorMsg)
 				props.error = "true"
 				updateBuildResult(errorMsg:errorMsg)
 				return null
-			} else {
+			} else { 
+				if (identifyStmt.length() > 71) { // Split IDENTIFY after col 71
+					// See syntax rules: https://www.ibm.com/docs/en/zos/3.1.0?topic=reference-identify-statement
+					identifyStmt = identifyStmt.substring(0,71) + "\n " + identifyStmt.substring(71,identifyStmt.length())
+				}
+				// return generated IDENTIFY statement
 				return identifyStmt
 			}
 		} else {
