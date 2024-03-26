@@ -278,6 +278,12 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 		compile.dd(new DDStatement().name("DBRMLIB").dsn("$props.cobol_dbrmPDS($member)").options('shr').output(true).deployType('DBRM'))
 
 	// add IDz User Build Error Feedback DDs
+	compile.dd(new DDStatement().name("SYSADATA").dsn("${props.hlq}.${member}.SYSADATA").options(props.cobol_compileErrorFeedbackXmlOptions))
+	//compile.dd(new DDStatement().name("SYSADATA").path("${logFile}.adata"))
+	//compile.copy(new CopyToHFS().ddName("SYSADATA").file(new File("${logFile}.adata")).copyMode(DBBConstants.CopyMode.BINARY).hfsEncoding(props.logEncoding))
+		
+		
+	// add IDz User Build Error Feedback DDs
 	if (props.errPrefix) {
 		compile.dd(new DDStatement().name("SYSADATA").options("DUMMY"))
 		// SYSXMLSD.XML suffix is mandatory for IDZ/ZOD to populate remote error list
