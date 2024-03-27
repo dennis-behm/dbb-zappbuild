@@ -35,14 +35,25 @@ sortedList.each { buildFile ->
 	MVSExec copyGen = createCopyGenCommand(buildFile, member, logFile)
 	MVSExec compile = createCompileCommand(buildFile, member, logFile)
 	MVSExec linkEdit = createLinkEditCommand(buildFile, member, logFile)
+
+	def rc
+	def maxRC
+	
+	if (props.generate && props.generate.toBoolean()) {
+		maxRC = props.getFileProperty('bms_maxRC', buildFile).toInteger()
+		rc = new MVSJob().executable(copyGen)
+				.maxRC(maxRC)
+				.execute()
+	} else {
 	
 	// execute mvs commands in a mvs job
-	def maxRC = props.getFileProperty('bms_maxRC', buildFile).toInteger()
-        def rc = new MVSJob().executable(copyGen)
+	maxRC = props.getFileProperty('bms_maxRC', buildFile).toInteger()
+        rc = new MVSJob().executable(copyGen)
 	                     .executable(compile)
 			     .executable(linkEdit)
 			     .maxRC(maxRC)
 			     .execute()
+}
 	
     if (rc > maxRC) {
 	    String errorMsg = "*! The build return code ($rc) for $buildFile exceeded the maximum return code allowed ($maxRC)"
@@ -73,8 +84,8 @@ def createCopyGenCommand(String buildFile, String member, File logFile) {
 	compile.dd(new DDStatement().name("SYSIN").dsn("${props.bms_srcPDS}($member)").options('shr').report(true))
 	compile.dd(new DDStatement().name("SYSPRINT").options(props.bms_tempOptions))
 	String deployType = buildUtils.getDeployType("bms_copy", buildFile, null)
-	compile.dd(new DDStatement().name("SYSPUNCH").dsn("${props.bms_cpyPDS}($member)").options('shr').output(true))
-	[1,2,3].each { num ->
+	compile.dd(new DDStatement().name("SYSPUNCH").dsn("${props.bms_cpyPDS}($member)").options('shr').output(true).deployType("BMSCOPY"))
+	[1, 2, 3].each { num ->
 		compile.dd(new DDStatement().name("SYSUT$num").options(props.bms_tempOptions))
 	}
 	compile.dd(new DDStatement().name("SYSLIB").dsn(props.SDFHMAC).options("shr"))
@@ -100,7 +111,7 @@ def createCompileCommand(String buildFile, String member, File logFile) {
 	compile.dd(new DDStatement().name("SYSIN").dsn("${props.bms_srcPDS}($member)").options('shr'))
 	compile.dd(new DDStatement().name("SYSPRINT").options(props.bms_tempOptions))
 	compile.dd(new DDStatement().name("SYSPUNCH").dsn("&&TEMPOBJ").options(props.bms_tempOptions).pass(true))
-	[1,2,3].each { num ->
+	[1, 2, 3].each { num ->
 		compile.dd(new DDStatement().name("SYSUT$num").options(props.bms_tempOptions))
 	}
 	compile.dd(new DDStatement().name("SYSLIB").dsn(props.SDFHMAC).options("shr"))
