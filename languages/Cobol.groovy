@@ -62,7 +62,7 @@ sortedList.each { buildFile ->
 	logicalFiles.add(logicalFile)
 }
 
-currentBuildFileNumber = 0
+currentBuildFileNumber = 1
 
 // iterate through build list to compile + precompile
 logicalFiles.each { logicalFile ->
@@ -116,12 +116,11 @@ logicalFiles.each { logicalFile ->
 
 // Iterate through links
 
-currentBuildFileNumber = 0
+currentBuildFileNumber = 1
 linkFiles.each { logicalFile ->
 
 	buildFile = logicalFile.file
 	
-	println "*** (${currentBuildFileNumber++}/${linkFiles.size()}) Run Link-Phase for file $buildFile"
 	
 	// create mvs commands
 	String member = CopyToPDS.createMemberName(buildFile)
@@ -134,6 +133,9 @@ linkFiles.each { logicalFile ->
 	job.start()
 
 	if (needsLinking.toBoolean()) {
+		
+		println "*** (${currentBuildFileNumber++}/${linkFiles.size()}) Run Link-Phase for file $buildFile"
+		
 		
 		MVSExec linkEdit = createLinkEditCommand(buildFile, logicalFile, member, logFile)
 
