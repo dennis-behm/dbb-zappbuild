@@ -37,7 +37,7 @@ HashSet<LogicalFile> linkFiles = new HashSet<LogicalFile>()
 
 // File upload
 sortedList.each { buildFile ->
-	println "*** (${currentBuildFileNumber++}/${sortedList.size()}) Uploading/Analysing file file $buildFile"
+	println "*** (${currentBuildFileNumber++}/${sortedList.size()}) Uploading/Analysing file $buildFile"
 
 	// Check if this a testcase
 	isZUnitTestCase = buildUtils.isGeneratedzUnitTestCaseProgram(buildFile)
