@@ -13,7 +13,7 @@ import com.ibm.dbb.build.report.records.*
 @Field def buildUtils= loadScript(new File("${props.zAppBuildDir}/utilities/BuildUtilities.groovy"))
 @Field def impactUtils= loadScript(new File("${props.zAppBuildDir}/utilities/ImpactUtilities.groovy"))
 @Field def bindUtils= loadScript(new File("${props.zAppBuildDir}/utilities/BindUtilities.groovy"))
-	
+
 println("** Building ${argMap.buildList.size()} ${argMap.buildList.size() == 1 ? 'file' : 'files'} mapped to ${this.class.getName()}.groovy script")
 
 // verify required build properties
@@ -32,17 +32,20 @@ if (buildListContainsTests(sortedList)) {
 	buildUtils.createLanguageDatasets(langQualifier)
 }
 
-// iterate through build list
+HashSet<LogicalFile> logicalFiles = new HashSet<LogicalFile>()
+HashSet<LogicalFile> linkFiles = new HashSet<LogicalFile>()
+
+// File upload
 sortedList.each { buildFile ->
-	println "*** (${currentBuildFileNumber++}/${sortedList.size()}) Building file $buildFile"
+	println "*** (${currentBuildFileNumber++}/${sortedList.size()}) Uploading/Analysing file file $buildFile"
 
 	// Check if this a testcase
 	isZUnitTestCase = buildUtils.isGeneratedzUnitTestCaseProgram(buildFile)
 
-	// configure dependency resolution and create logical file	
+	// configure dependency resolution and create logical file
 	String dependencySearch = props.getFileProperty('cobol_dependencySearch', buildFile)
 	SearchPathDependencyResolver dependencyResolver = new SearchPathDependencyResolver(dependencySearch)
-	
+
 	// copy build file and dependency files to data sets
 	if(isZUnitTestCase){
 		buildUtils.copySourceFiles(buildFile, props.cobol_testcase_srcPDS, null, null, null)
@@ -55,19 +58,27 @@ sortedList.each { buildFile ->
 
 	// print logicalFile details and overrides
 	if (props.verbose) buildUtils.printLogicalFileAttributes(logicalFile)
-	
+
+	logicalFiles.add(logicalFile)
+}
+
+currentBuildFileNumber = 0
+
+// iterate through build list to compile + precompile
+logicalFiles.each { logicalFile ->
+
+	buildFile = logicalFile.file
+	println "*** (${currentBuildFileNumber++}/${logicalFiles.size()}) Building file $buildFile"
+
 	// create mvs commands
 	String member = CopyToPDS.createMemberName(buildFile)
-	String needsLinking = props.getFileProperty('cobol_linkEdit', buildFile)
-	
+
 	File logFile = new File( props.userBuild ? "${props.buildOutDir}/${member}.log" : "${props.buildOutDir}/${member}.cobol.log")
 	if (logFile.exists())
 		logFile.delete()
-	
-	MVSExec compile = createCompileCommand(buildFile, logicalFile, member, logFile)
-	MVSExec linkEdit
-	if (needsLinking.toBoolean()) linkEdit = createLinkEditCommand(buildFile, logicalFile, member, logFile)
 
+	MVSExec compile = createCompileCommand(buildFile, logicalFile, member, logFile)
+	
 	// execute mvs commands in a mvs job
 	MVSJob job = new MVSJob()
 	job.start()
@@ -86,56 +97,89 @@ sortedList.each { buildFile ->
 		buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile])
 	}
 	else { // if this program needs to be link edited . . .
-		
+
+		linkFiles.add(logicalFile)
+
 		// Store db2 bind information as a generic property record in the BuildReport
 		String generateDb2BindInfoRecord = props.getFileProperty('generateDb2BindInfoRecord', buildFile)
 		if (buildUtils.isSQL(logicalFile) && generateDb2BindInfoRecord.toBoolean() ){
 			PropertiesRecord db2BindInfoRecord = buildUtils.generateDb2InfoRecord(buildFile)
 			BuildReportFactory.getBuildReport().addRecord(db2BindInfoRecord)
 		}
-		
-		if (needsLinking.toBoolean()) {
-			rc = linkEdit.execute()
-			maxRC = props.getFileProperty('cobol_linkEditMaxRC', buildFile).toInteger()
 
-			if (rc > maxRC) {
-				bindFlag = false
-				String errorMsg = "*! The link edit return code ($rc) for $buildFile exceeded the maximum return code allowed ($maxRC)"
-				println(errorMsg)
-				props.error = "true"
-				buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile])
-			}
-			else {
-				if(!props.userBuild && !isZUnitTestCase){
-					// only scan the load module if load module scanning turned on for file
-					String scanLoadModule = props.getFileProperty('cobol_scanLoadModule', buildFile)
-					if (scanLoadModule && scanLoadModule.toBoolean())
-						impactUtils.saveStaticLinkDependencies(buildFile, props.cobol_loadPDS, logicalFile)
-				}
-			}
-		}
-	}
 
-	//perform Db2 Bind only on User Build and perfromBindPackage property
-	if (props.userBuild && bindFlag && logicalFile.isSQL() && props.bind_performBindPackage && props.bind_performBindPackage.toBoolean() ) {
-		int bindMaxRC = props.getFileProperty('bind_maxRC', buildFile).toInteger()
-
-		// if no  owner is set, use the user.name as package owner
-		def owner = ( !props.bind_packageOwner ) ? System.getProperty("user.name") : props.bind_packageOwner
-
-		def (bindRc, bindLogFile) = bindUtils.bindPackage(buildFile, props.cobol_dbrmPDS, props.buildOutDir, props.bind_runIspfConfDir,
-				props.bind_db2Location, props.bind_collectionID, owner, props.bind_qualifier, props.verbose && props.verbose.toBoolean());
-		if ( bindRc > bindMaxRC) {
-			String errorMsg = "*! The bind package return code ($bindRc) for $buildFile exceeded the maximum return code allowed ($props.bind_maxRC)"
-			println(errorMsg)
-			props.error = "true"
-			buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}_bind.log":bindLogFile])
-		}
 	}
 
 	// clean up passed DD statements
 	job.stop()
 }
+
+// Iterate through links
+
+currentBuildFileNumber = 0
+linkFiles.each { logicalFile ->
+
+	buildFile = logicalFile.file
+	
+	println "*** (${currentBuildFileNumber++}/${linkFiles.size()}) Run Link-Phase for file $buildFile"
+	
+	// create mvs commands
+	String member = CopyToPDS.createMemberName(buildFile)
+	String needsLinking = props.getFileProperty('cobol_linkEdit', buildFile)
+	
+	File logFile = new File( props.userBuild ? "${props.buildOutDir}/${member}.log" : "${props.buildOutDir}/${member}.cobol.log")
+		
+	// execute mvs commands in a mvs job
+	MVSJob job = new MVSJob()
+	job.start()
+
+	if (needsLinking.toBoolean()) {
+		
+		MVSExec linkEdit = createLinkEditCommand(buildFile, logicalFile, member, logFile)
+
+		rc = linkEdit.execute()
+		maxRC = props.getFileProperty('cobol_linkEditMaxRC', buildFile).toInteger()
+
+		if (rc > maxRC) {
+			bindFlag = false
+			String errorMsg = "*! The link edit return code ($rc) for $buildFile exceeded the maximum return code allowed ($maxRC)"
+			println(errorMsg)
+			props.error = "true"
+			buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile])
+		}
+		else {
+
+			//perform Db2 Bind only on User Build and perfromBindPackage property
+			if (props.userBuild && bindFlag && logicalFile.isSQL() && props.bind_performBindPackage && props.bind_performBindPackage.toBoolean() ) {
+				int bindMaxRC = props.getFileProperty('bind_maxRC', buildFile).toInteger()
+
+				// if no  owner is set, use the user.name as package owner
+				def owner = ( !props.bind_packageOwner ) ? System.getProperty("user.name") : props.bind_packageOwner
+
+				def (bindRc, bindLogFile) = bindUtils.bindPackage(buildFile, props.cobol_dbrmPDS, props.buildOutDir, props.bind_runIspfConfDir,
+						props.bind_db2Location, props.bind_collectionID, owner, props.bind_qualifier, props.verbose && props.verbose.toBoolean());
+				if ( bindRc > bindMaxRC) {
+					String errorMsg = "*! The bind package return code ($bindRc) for $buildFile exceeded the maximum return code allowed ($props.bind_maxRC)"
+					println(errorMsg)
+					props.error = "true"
+					buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}_bind.log":bindLogFile])
+				}
+			}
+
+			if(!props.userBuild && !isZUnitTestCase){
+				// only scan the load module if load module scanning turned on for file
+				String scanLoadModule = props.getFileProperty('cobol_scanLoadModule', buildFile)
+				if (scanLoadModule && scanLoadModule.toBoolean())
+					impactUtils.saveStaticLinkDependencies(buildFile, props.cobol_loadPDS, logicalFile)
+			}
+		}
+	}
+	
+	// clean up passed DD statements
+	job.stop()
+
+}
+
 
 // end script
 
@@ -186,15 +230,15 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 	MVSExec compile = new MVSExec().file(buildFile).pgm(compiler).parm(parms)
 
 	// add DD statements to the compile command
-	
+
 	if (isZUnitTestCase){
-	compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_testcase_srcPDS}($member)").options('shr').report(true))
+		compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_testcase_srcPDS}($member)").options('shr').report(true))
 	}
 	else
 	{
 		compile.dd(new DDStatement().name("SYSIN").dsn("${props.cobol_srcPDS}($member)").options('shr').report(true))
 	}
-	
+
 	compile.dd(new DDStatement().name("SYSPRINT").options(props.cobol_printTempOptions))
 	compile.dd(new DDStatement().name("SYSMDECK").options(props.cobol_tempOptions))
 	(1..15).toList().each { num ->
@@ -211,7 +255,7 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 		compile.dd(new DDStatement().dsn(props.bms_cpyPDS).options("shr"))
 	if(props.team)
 		compile.dd(new DDStatement().dsn(props.cobol_BMS_PDS).options("shr"))
-	
+
 	// add additional datasets with dependencies based on the dependenciesDatasetMapping
 	PropertyMappings dsMapping = new PropertyMappings('cobol_dependenciesDatasetMapping')
 	dsMapping.getValues().each { targetDataset ->
@@ -225,19 +269,19 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 	if (compileSyslibConcatenation) {
 		def String[] syslibDatasets = compileSyslibConcatenation.split(',');
 		for (String syslibDataset : syslibDatasets )
-		compile.dd(new DDStatement().dsn(syslibDataset).options("shr"))
+			compile.dd(new DDStatement().dsn(syslibDataset).options("shr"))
 	}
-	
+
 	// add subsystem libraries
 	if (buildUtils.isCICS(logicalFile))
 		compile.dd(new DDStatement().dsn(props.SDFHCOB).options("shr"))
 
 	if (buildUtils.isMQ(logicalFile))
 		compile.dd(new DDStatement().dsn(props.SCSQCOBC).options("shr"))
-		
+
 	// add additional zunit libraries
 	if (isZUnitTestCase)
-	compile.dd(new DDStatement().dsn(props.SBZUSAMP).options("shr"))
+		compile.dd(new DDStatement().dsn(props.SBZUSAMP).options("shr"))
 
 	// adding alternate library definitions
 	if (props.cobol_dependenciesAlternativeLibraryNameMapping) {
@@ -255,7 +299,7 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 			}
 		}
 	}
-	
+
 	// add a tasklib to the compile command with optional CICS, DB2, and IDz concatenations
 	String compilerVer = props.getFileProperty('cobol_compilerVersion', buildFile)
 	compile.dd(new DDStatement().name("TASKLIB").dsn(props."SIGYCOMP_$compilerVer").options("shr"))
@@ -265,7 +309,7 @@ def createCompileCommand(String buildFile, LogicalFile logicalFile, String membe
 		if (props.SDSNEXIT) compile.dd(new DDStatement().dsn(props.SDSNEXIT).options("shr"))
 		compile.dd(new DDStatement().dsn(props.SDSNLOAD).options("shr"))
 	}
-	
+
 	if (props.SFELLOAD)
 		compile.dd(new DDStatement().dsn(props.SFELLOAD).options("shr"))
 
@@ -302,31 +346,31 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 		String ssi = buildUtils.getShortGitHash(buildFile)
 		if (ssi != null) parms = parms + ",SSI=$ssi"
 	}
-	
+
 	if (props.verbose) println "*** Link-Edit parms for $buildFile = $parms"
-	
+
 	// define the MVSExec command to link edit the program
 	MVSExec linkedit = new MVSExec().file(buildFile).pgm(linker).parm(parms)
 
 	// Assemble linkEditInstream to define SYSIN as instreamData
 	String sysin_linkEditInstream = ''
-	
+
 	// appending configured linkEdit stream if specified
 	if (linkEditStream) {
 		sysin_linkEditInstream += "  " + linkEditStream.replace("\\n","\n").replace('@{member}',member)
 	}
-	
+
 	// appending IDENTIFY statement to link phase for traceability of load modules
 	// this adds an IDRU record, which can be retrieved with amblist
 	def identifyLoad = props.getFileProperty('cobol_identifyLoad', buildFile)
-	
+
 	if (identifyLoad && identifyLoad.toBoolean()) {
 		String identifyStatement = buildUtils.generateIdentifyStatement(buildFile, props.cobol_loadOptions)
 		if (identifyStatement != null ) {
 			sysin_linkEditInstream += identifyStatement
 		}
 	}
-	
+
 	// appending mq stub according to file flags
 	if(buildUtils.isMQ(logicalFile)) {
 		// include mq stub program
@@ -348,7 +392,7 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 	// add SYSLIN along the reference to SYSIN if configured through sysin_linkEditInstream
 	linkedit.dd(new DDStatement().name("SYSLIN").dsn("${props.cobol_objPDS}($member)").options('shr'))
 	if (sysin_linkEditInstream) linkedit.dd(new DDStatement().ddref("SYSIN"))
-			
+
 	// add DD statements to the linkedit command
 	String deployType = buildUtils.getDeployType("cobol", buildFile, logicalFile)
 	if(isZUnitTestCase){
@@ -367,13 +411,13 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 
 	// add a syslib to the compile command with optional CICS concatenation
 	linkedit.dd(new DDStatement().name("SYSLIB").dsn(props.cobol_objPDS).options("shr"))
-	
+
 	// add custom concatenation
 	def linkEditSyslibConcatenation = props.getFileProperty('cobol_linkEditSyslibConcatenation', buildFile) ?: ""
 	if (linkEditSyslibConcatenation) {
 		def String[] syslibDatasets = linkEditSyslibConcatenation.split(',');
 		for (String syslibDataset : syslibDatasets )
-		linkedit.dd(new DDStatement().dsn(syslibDataset).options("shr"))
+			linkedit.dd(new DDStatement().dsn(syslibDataset).options("shr"))
 	}
 	linkedit.dd(new DDStatement().dsn(props.SCEELKED).options("shr"))
 
@@ -383,10 +427,10 @@ def createLinkEditCommand(String buildFile, LogicalFile logicalFile, String memb
 
 	if (buildUtils.isCICS(logicalFile))
 		linkedit.dd(new DDStatement().dsn(props.SDFHLOAD).options("shr"))
-	
+
 	if (buildUtils.isIMS(logicalFile))
 		linkedit.dd(new DDStatement().dsn(props.SDFSRESL).options("shr"))
-			
+
 	if (buildUtils.isSQL(logicalFile))
 		linkedit.dd(new DDStatement().dsn(props.SDSNLOAD).options("shr"))
 
