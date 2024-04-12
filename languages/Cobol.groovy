@@ -78,7 +78,7 @@ logicalFiles.each { logicalFile ->
 		logFile.delete()
 
 	MVSExec compile = createCompileCommand(buildFile, logicalFile, member, logFile)
-	
+
 	// execute mvs commands in a mvs job
 	MVSJob job = new MVSJob()
 	job.start()
@@ -96,9 +96,13 @@ logicalFiles.each { logicalFile ->
 		props.error = "true"
 		buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile])
 	}
-	else { // if this program needs to be link edited . . .
+	else {
 
-		linkFiles.add(logicalFile)
+		String needsLinking = props.getFileProperty('cobol_linkEdit', buildFile)
+		// if this program needs to be link edited . . .
+		if (needsLinking.toBoolean()) {
+			linkFiles.add(logicalFile)
+		}
 
 		// Store db2 bind information as a generic property record in the BuildReport
 		String generateDb2BindInfoRecord = props.getFileProperty('generateDb2BindInfoRecord', buildFile)
@@ -120,63 +124,60 @@ currentBuildFileNumber = 1
 linkFiles.each { logicalFile ->
 
 	buildFile = logicalFile.file
-	
-	
+
+
 	// create mvs commands
 	String member = CopyToPDS.createMemberName(buildFile)
-	String needsLinking = props.getFileProperty('cobol_linkEdit', buildFile)
-	
+
 	File logFile = new File( props.userBuild ? "${props.buildOutDir}/${member}.log" : "${props.buildOutDir}/${member}.cobol.log")
-		
+
 	// execute mvs commands in a mvs job
 	MVSJob job = new MVSJob()
 	job.start()
 
-	if (needsLinking.toBoolean()) {
-		
-		println "*** (${currentBuildFileNumber++}/${linkFiles.size()}) Run Link-Phase for file $buildFile"
-		
-		
-		MVSExec linkEdit = createLinkEditCommand(buildFile, logicalFile, member, logFile)
 
-		rc = linkEdit.execute()
-		maxRC = props.getFileProperty('cobol_linkEditMaxRC', buildFile).toInteger()
+	println "*** (${currentBuildFileNumber++}/${linkFiles.size()}) Run Link-Phase for file $buildFile"
 
-		if (rc > maxRC) {
-			bindFlag = false
-			String errorMsg = "*! The link edit return code ($rc) for $buildFile exceeded the maximum return code allowed ($maxRC)"
-			println(errorMsg)
-			props.error = "true"
-			buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile])
+
+	MVSExec linkEdit = createLinkEditCommand(buildFile, logicalFile, member, logFile)
+
+	rc = linkEdit.execute()
+	maxRC = props.getFileProperty('cobol_linkEditMaxRC', buildFile).toInteger()
+
+	if (rc > maxRC) {
+		bindFlag = false
+		String errorMsg = "*! The link edit return code ($rc) for $buildFile exceeded the maximum return code allowed ($maxRC)"
+		println(errorMsg)
+		props.error = "true"
+		buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}.log":logFile])
+	}
+	else {
+
+		//perform Db2 Bind only on User Build and perfromBindPackage property
+		if (props.userBuild && bindFlag && logicalFile.isSQL() && props.bind_performBindPackage && props.bind_performBindPackage.toBoolean() ) {
+			int bindMaxRC = props.getFileProperty('bind_maxRC', buildFile).toInteger()
+
+			// if no  owner is set, use the user.name as package owner
+			def owner = ( !props.bind_packageOwner ) ? System.getProperty("user.name") : props.bind_packageOwner
+
+			def (bindRc, bindLogFile) = bindUtils.bindPackage(buildFile, props.cobol_dbrmPDS, props.buildOutDir, props.bind_runIspfConfDir,
+					props.bind_db2Location, props.bind_collectionID, owner, props.bind_qualifier, props.verbose && props.verbose.toBoolean());
+			if ( bindRc > bindMaxRC) {
+				String errorMsg = "*! The bind package return code ($bindRc) for $buildFile exceeded the maximum return code allowed ($props.bind_maxRC)"
+				println(errorMsg)
+				props.error = "true"
+				buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}_bind.log":bindLogFile])
+			}
 		}
-		else {
 
-			//perform Db2 Bind only on User Build and perfromBindPackage property
-			if (props.userBuild && bindFlag && logicalFile.isSQL() && props.bind_performBindPackage && props.bind_performBindPackage.toBoolean() ) {
-				int bindMaxRC = props.getFileProperty('bind_maxRC', buildFile).toInteger()
-
-				// if no  owner is set, use the user.name as package owner
-				def owner = ( !props.bind_packageOwner ) ? System.getProperty("user.name") : props.bind_packageOwner
-
-				def (bindRc, bindLogFile) = bindUtils.bindPackage(buildFile, props.cobol_dbrmPDS, props.buildOutDir, props.bind_runIspfConfDir,
-						props.bind_db2Location, props.bind_collectionID, owner, props.bind_qualifier, props.verbose && props.verbose.toBoolean());
-				if ( bindRc > bindMaxRC) {
-					String errorMsg = "*! The bind package return code ($bindRc) for $buildFile exceeded the maximum return code allowed ($props.bind_maxRC)"
-					println(errorMsg)
-					props.error = "true"
-					buildUtils.updateBuildResult(errorMsg:errorMsg,logs:["${member}_bind.log":bindLogFile])
-				}
-			}
-
-			if(!props.userBuild && !isZUnitTestCase){
-				// only scan the load module if load module scanning turned on for file
-				String scanLoadModule = props.getFileProperty('cobol_scanLoadModule', buildFile)
-				if (scanLoadModule && scanLoadModule.toBoolean())
-					impactUtils.saveStaticLinkDependencies(buildFile, props.cobol_loadPDS, logicalFile)
-			}
+		if(!props.userBuild && !isZUnitTestCase){
+			// only scan the load module if load module scanning turned on for file
+			String scanLoadModule = props.getFileProperty('cobol_scanLoadModule', buildFile)
+			if (scanLoadModule && scanLoadModule.toBoolean())
+				impactUtils.saveStaticLinkDependencies(buildFile, props.cobol_loadPDS, logicalFile)
 		}
 	}
-	
+
 	// clean up passed DD statements
 	job.stop()
 
