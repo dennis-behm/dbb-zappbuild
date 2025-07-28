@@ -823,7 +823,7 @@ def finalizeBuildProcess(Map args) {
 	if (args.buildListSize == args.buildCounter) {
 		println("** Number of source files processed: ${args.buildCounter}")
 	} else {
-		println("** Number of source files processed : ${args.buildListSize}" and files built: ${args.buildCounter})
+		println("** Number of source files processed : ${args.buildListSize} and files built: ${args.buildCounter}")
 	}
 
 	if (props.errorSummary) {
