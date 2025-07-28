@@ -48,7 +48,8 @@ List<String> buildList = new ArrayList()
 buildList = createBuildList()
 
 // build programs in the build list
-def processCounter = 0
+def buildCounter = 0
+def buildListSize = buildList.size()
 def scriptPath = ""
 if (buildList.size() == 0)
 	println("*! No files in build list.  Nothing to do.")
@@ -73,13 +74,13 @@ else {
 					else
 						runScript(new File("languages/${scriptPath}"), ['buildList':buildFiles])
 				}
-				processCounter = processCounter + buildFiles.size()
+				buildCounter = buildCounter + buildFiles.size()
 			} catch (BuildException | AssertionError e ) {
 				String errorMsg = e.getMessage()
 				println(errorMsg)
 				props.error = "true"
 				buildUtils.updateBuildResult(errorMsg:errorMsg)
-				finalizeBuildProcess(start:startTime, count:processCounter)
+				finalizeBuildProcess(start:startTime, buildCount:buildCounter, buildListSize:buildListSize)
 			}
 		}
 	} else if(props.scanLoadmodules && props.scanLoadmodules.toBoolean()){
@@ -88,11 +89,7 @@ else {
 	}
 }
 
-// finalize build process
-if (processCounter == 0)
-	processCounter = buildList.size()
-
-finalizeBuildProcess(start:startTime, count:processCounter)
+finalizeBuildProcess(start:startTime, buildCount:0, buildListSize:buildListSize)
 
 // end script
 
@@ -769,7 +766,8 @@ def finalizeBuildProcess(Map args) {
 		}
 
 		// add files processed and set state
-		buildResult.setProperty("filesProcessed", String.valueOf(args.count))
+		buildResult.setProperty("filesProcessed", String.valueOf(args.buildListSize))
+		buildResult.setProperty("filesBuilt", String.valueOf(args.buildCounter))
 		buildResult.setState(buildResult.COMPLETE)
 
 		// add zAppBuild and DBB toolkit version info
@@ -819,8 +817,15 @@ def finalizeBuildProcess(Map args) {
 	def state = (props.error) ? "ERROR" : "CLEAN"
 	println("** Build ended at $endTime")
 	println("** Build State : $state")
+	println("** Build dataset qualifier : $props.hlq")
 	if (props.preview) println("** Build ran in preview mode.")
-	println("** Total files processed : ${args.count}")
+	
+	if (args.buildListSize == args.buildCounter) {
+		println("** Number of source files processed: ${args.buildCounter}")
+	} else {
+		println("** Number of source files processed : ${args.buildListSize}" and files built: ${args.buildCounter})
+	}
+
 	if (props.errorSummary) {
 		println("** Summary of error messages")
 		println("${props.errorSummary}")
