@@ -820,10 +820,10 @@ def finalizeBuildProcess(Map args) {
 	println("** Build dataset qualifier : $props.hlq")
 	if (props.preview) println("** Build ran in preview mode.")
 	
-	if (args.buildListSize == args.buildCounter) {
-		println("** Number of source files processed: ${args.buildCounter}")
+	if (args.buildListSize == args.buildCount) {
+		println("** Number of source files processed: ${args.buildCount}")
 	} else {
-		println("** Number of source files processed : ${args.buildListSize} and files built: ${args.buildCounter}")
+		println("** Number of source files processed : ${args.buildListSize} and files built: ${args.buildCount}")
 	}
 
 	if (props.errorSummary) {
