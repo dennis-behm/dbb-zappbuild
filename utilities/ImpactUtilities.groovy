@@ -330,6 +330,7 @@ def calculateChangedFiles(BuildResult lastBuildResult, boolean calculateConcurre
 	Set<String> deletedFiles = new HashSet<String>() // to be removed from metadatastore
 	Set<String> renamedFiles = new HashSet<String>() // to be removed from metadatastore
 	Set<String> movedFiles = new HashSet<String>() // to be scanned and added to metadatastore
+	Set<String> revertedFiles = new HashSet<String>() // to be processed on customer need
 	Set<String> changedIndividualFilePropertiesFiles = new HashSet<String>()
 	Set<String> changedBuildProperties = new HashSet<String>()
 
@@ -397,6 +398,7 @@ def calculateChangedFiles(BuildResult lastBuildResult, boolean calculateConcurre
 		def deleted = []
 		def renamed = []
 		def moved = []
+		def reverted = []
 		String baseline
 		String current
 		String abbrevCurrent
@@ -418,7 +420,7 @@ def calculateChangedFiles(BuildResult lastBuildResult, boolean calculateConcurre
 				}
 				else {
 					if (props.verbose) println "** Diffing baseline $baseline -> current $current"
-					(changed, deleted, renamed, moved) = gitUtils.getChangedFiles(dir, baseline, current)
+					(changed, deleted, renamed, moved, reverted) = gitUtils.getChangedFiles(dir, baseline, current)
 				}
 			}
 			// when no build result is provided but the outgoingChangesBuild, calculate the outgoing changes
@@ -505,6 +507,21 @@ def calculateChangedFiles(BuildResult lastBuildResult, boolean calculateConcurre
 				if (props.verbose) println "**** $file"
 			} else {
 				if (props.verbose) println "**** $file is moved, but is excluded from build scope. See excludeFileList configuration. No follow-up processing."
+			}
+		}
+
+		// files that were reverted to original state.
+		if (props.verbose) println "*** Reverted files for directory $dir $msg:"
+
+		reverted.each { file ->
+			(file, mode) = fixGitDiffPath(file, dir, true, mode)
+			if ( file != null ) {
+				// filter excluded files
+				if ( !buildUtils.matches(file, excludeMatchers)) {
+					revertedFiles << file
+					//if (!calculateConcurrentChanges) githashBuildableFilesMap.addFilePattern(abbrevCurrent, file)
+					if (props.verbose) println "**** $file"
+				} 
 			}
 		}
 

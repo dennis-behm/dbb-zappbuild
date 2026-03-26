@@ -247,13 +247,93 @@ def getPreviousGitHash(String gitDir) {
 }
 
 /*
+ * getRevertedFiles - identifies files that were modified in intermediate commits but reverted back
+ *  to their original state between baseHash and currentHash
+ *
+ * @param String gitDir         Local Git repository directory
+ * @param String baseHash       Starting commit hash (e.g., c1)
+ * @param String currentHash    Ending commit hash (e.g., c4)
+ * @return List                 List of files that were reverted
+ */
+def getRevertedFiles(String gitDir, String baseHash, String currentHash) {
+	def revertedFiles = []
+	
+	// Get all files that were touched in any commit between baseHash and currentHash
+	String logCmd = "git -C $gitDir --no-pager log --name-only --pretty=format: $baseHash..$currentHash $gitDir"
+	def git_log = new StringBuffer()
+	def git_error = new StringBuffer()
+	
+	def process = logCmd.execute()
+	process.waitForProcessOutput(git_log, git_error)
+	
+	if (git_error.size() > 0) {
+		String errorMsg = "*! Error executing Git command: $logCmd error: $git_error"
+		println(errorMsg)
+		props.error = "true"
+		updateBuildResult(errorMsg:errorMsg)
+		return revertedFiles
+	}
+	
+	// Collect unique files that were touched
+	def touchedFiles = [] as Set
+	for (line in git_log.toString().split("\n")) {
+		def trimmedLine = line.trim()
+		if (trimmedLine && !trimmedLine.isEmpty()) {
+			touchedFiles.add(trimmedLine)
+		}
+	}
+	
+	// For each touched file, compare its hash at baseHash and currentHash
+	touchedFiles.each { file ->
+		// Get file hash at baseHash
+		String baseHashCmd = "git -C $gitDir --no-pager rev-parse $baseHash:$file"
+		def baseHashOut = new StringBuffer()
+		def baseHashErr = new StringBuffer()
+		def baseHashProc = baseHashCmd.execute()
+		baseHashProc.waitForProcessOutput(baseHashOut, baseHashErr)
+		
+		// Get file hash at currentHash
+		String currentHashCmd = "git -C $gitDir --no-pager rev-parse $currentHash:$file"
+		def currentHashOut = new StringBuffer()
+		def currentHashErr = new StringBuffer()
+		def currentHashProc = currentHashCmd.execute()
+		currentHashProc.waitForProcessOutput(currentHashOut, currentHashErr)
+		
+		// If both hashes exist and are identical, the file was reverted
+		if (baseHashErr.size() == 0 && currentHashErr.size() == 0) {
+			String baseFileHash = baseHashOut.toString().trim()
+			String currentFileHash = currentHashOut.toString().trim()
+			
+			if (baseFileHash == currentFileHash && !baseFileHash.isEmpty()) {
+				revertedFiles.add(file)
+				if (props.verbose) {
+					println("** (GitUtils.getRevertedFiles) Detected reverted file: $file (hash: $baseFileHash)")
+				}
+			}
+		}
+	}
+	
+	return revertedFiles
+}
+
+/*
  * getChangedFiles - assembles a git diff command to support the impactBuild for a given directory
- *  returns the changed, deleted, renamed and moved files.
- * 
+ *  returns the changed, deleted, renamed, moved and reverted files.
+ *
  */
 def getChangedFiles(String gitDir, String baseHash, String currentHash) {
 	String gitCmd = "git -C $gitDir --no-pager diff --name-status $baseHash $currentHash $gitDir"
-	return getChangedFiles(gitCmd)
+	def result = getChangedFiles(gitCmd)
+	
+	if (props.baselineRef){
+		// Detect reverted files (files modified in intermediate commits but reverted back)
+		def revertedFiles = getRevertedFiles(gitDir, baseHash, currentHash)
+	
+		// Add reverted files as the 5th element in the result
+		result.add(revertedFiles)
+	}
+	
+	return result
 }
 
 /*
@@ -267,9 +347,10 @@ def getMergeChanges(String gitDir, String baselineReference) {
 }
 
 /*
- * getMergeChanges - assembles a git triple-dot diff command to support mergeBuild scenarios
- *  returns the changed, deleted, renamed and moved files between current HEAD and the provided baseline.
- *
+ * getConcurrentChanges - assembles a git triple-dot diff command to detect concurrent changes
+ *  returns the changed, deleted, renamed, moved files between provided baseline and the head of the current branch.
+ *  aka - "incoming changes"
+ * 
  */
 def getConcurrentChanges(String gitDir, String baselineReference) {
 	String gitCmd = "git -C $gitDir --no-pager diff --name-status HEAD...remotes/origin/$baselineReference $gitDir"
