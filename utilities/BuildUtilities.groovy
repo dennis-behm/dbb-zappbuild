@@ -986,19 +986,24 @@ def printLogicalFileAttributes(LogicalFile logicalFile) {
  * method to load build properties into the DBB Build properties.
  * 
  * takes the path to the property file, validates if the property file exist
+ * and ensures that property files can only be loaded from the build-conf directory or 
+ * application-conf directory
+ * 
+ * If an alternative path is provided via the --propFiles parm, the process stops
  *  
  */
 
 def loadBuildProperties(String propertyFile) {
 	File propFile = new File("$propertyFile")
-	
+
 	if (propFile.exists()) {
-		 if ("${props.buildConf}".contains(propFile.getParent()) || "{props.applicationConfDir}".contains(propFile.getParent())) {
-		 	props.load(propFile)
-		 } else {
-			 println "*!* The specified $propertyFile is not loaded from either build-conf ${props.buildConf} or application-conf ${props.applicationConfDir} paths. Avoid external property file loading. Build exits."
-			 System.exit(1)
-		 }
+		String parentFolder = propFile.getParent()
+		if ("${props.buildConf}".contains(parentFolder) || "${props.applicationConfDir}".contains(parentFolder)) {
+			props.load(propFile)
+		} else {
+			println "*!* The specified $propertyFile is not loaded from either build-conf ${props.buildConf} or application-conf ${props.applicationConfDir} paths. Avoid external property file loading. Build exits."
+			System.exit(1)
+		}
 	} else {
 		println "*!* The specified $propertyFile does not exist. Build exits."
 		System.exit(1)
