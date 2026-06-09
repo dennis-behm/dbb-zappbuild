@@ -993,7 +993,7 @@ def loadBuildProperties(String propertyFile) {
 	File propFile = new File("$propertyFile")
 	
 	if (propFile.exists()) {
-		 if (propertyFile.contains(props.buildConf) || propertyFile.contains(props.applicationConfDir)) {
+		 if ("${props.buildConf}".contains(propFile.getParent()) || "{props.applicationConfDir}".contains(propFile.getParent())) {
 		 	props.load(propFile)
 		 } else {
 			 println "*!* The specified $propertyFile is not loaded from either build-conf ${props.buildConf} or application-conf ${props.applicationConfDir} paths. Avoid external property file loading. Build exits."
