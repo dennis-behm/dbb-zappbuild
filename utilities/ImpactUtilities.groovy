@@ -121,7 +121,7 @@ def createImpactBuildList() {
 						}
 					}
 					else {
-						String warningMsg = "*! The impacted file does not have a file name. RAW impact file object $impact."
+						String warningMsg = "*! The impacted file does not have a file name. impact file in JSON representation: ${impact.toJSON()}."
 						buildUtils.updateBuildResult(warningMsg:warningMsg)
 						println(warningMsg)
 					}
