@@ -352,7 +352,7 @@ def populateBuildProperties(def opts) {
 
 	def zAppBuildDir =  getScriptDir()
 	props.zAppBuildDir = zAppBuildDir
-	props.buildConf = "${zAppBuildDir}/build-conf" // hard-coded build-conf path
+	props.buildConf = "${zAppBuildDir}/build-conf" as String // hard-coded build-conf path
 
 	// set required command line arguments
 	if (opts.w) props.workspace = opts.w
