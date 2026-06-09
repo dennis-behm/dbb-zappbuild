@@ -352,6 +352,7 @@ def populateBuildProperties(def opts) {
 
 	def zAppBuildDir =  getScriptDir()
 	props.zAppBuildDir = zAppBuildDir
+	props.buildConf = "${zAppBuildDir}/build-conf" // hard-coded build-conf path
 
 	// set required command line arguments
 	if (opts.w) props.workspace = opts.w
@@ -379,9 +380,8 @@ def populateBuildProperties(def opts) {
 	}
 	
 	// load build.properties
-	def buildConf = "${zAppBuildDir}/build-conf"
-	if (opts.v) println "** Loading property file ${buildConf}/build.properties"
-	buildUtils.loadBuildProperties("${buildConf}/build.properties")
+	if (opts.v) println "** Loading property file ${props.buildConf}/build.properties"
+	buildUtils.loadBuildProperties("${props.buildConf}/build.properties")
 
 	// load additional build property files
 	if (opts.v) println "** Loading zAppBuild build properties"
@@ -389,7 +389,7 @@ def populateBuildProperties(def opts) {
 		String[] buildPropFiles = props.buildPropFiles.split(',')
 		buildPropFiles.each { propFile ->
 			if (!propFile.startsWith('/'))
-				propFile = "${buildConf}/${propFile}"
+				propFile = "${props.buildConf}/${propFile}"
 			
 			if (opts.v) println "** Loading property file ${propFile}"
 			buildUtils.loadBuildProperties(propFile)
@@ -402,8 +402,7 @@ def populateBuildProperties(def opts) {
 		String[] applicationDefaultPropFiles = props.applicationDefaultPropFiles.split(',')
 		applicationDefaultPropFiles.each { propFile ->
 			if (!propFile.startsWith('/'))
-				propFile = "${buildConf}/${propFile}"
-
+				propFile = "${props.buildConf}/${propFile}"
 			if (opts.v) println "** Loading property file ${propFile}"
 			buildUtils.loadBuildProperties(propFile)
 		}
