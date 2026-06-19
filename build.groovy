@@ -156,8 +156,12 @@ def initializeBuildProcess(String[] args) {
 			//Get password file or encrypted password from command line
 			String password
 			File passwordFile
-			if (opts.pf)  
+			if (opts.pf)  {
+				if ((opts.pf).contains('..')) {
+						throw new SecurityException("Path traversal not allowed in: ${opts.pf}")
+ 				}		
 				passwordFile = new File(opts.pf)
+			}
 			else if (opts.pw)
 				password = opts.pw
 
@@ -367,13 +371,19 @@ def populateBuildProperties(def opts) {
 	// assert workspace
 	buildUtils.assertBuildProperties('workspace,outDir')
 
-	// Validate that workspace exists 
+	// Validate that workspace exists
+	if ((props.workspace).contains('..')) {
+		throw new SecurityException("Path traversal not allowed in: ${props.workspace}")
+ 	}
 	if (!(new File (props.workspace).exists())) {
 		println "!! The specified workspace folder ${props.workspace} does not exist. Build exits."
 		System.exit(1)
 	}
 	
 	// Check read/write permission of specified out/log dir if already existing 
+	if ((props.outDir).contains('..')) {
+		throw new SecurityException("Path traversal not allowed in: ${props.outDir}")
+ 	}	
 	if (new File (props.outDir).exists() && !(new File(props.outDir).canWrite())) {
 		println "!! User does not have WRITE permission to work output directory ${props.outDir}. Build exits."
 		System.exit(1)
