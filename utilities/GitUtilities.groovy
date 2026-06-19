@@ -247,8 +247,8 @@ def getPreviousGitHash(String gitDir) {
 }
 
 /*
- * getRevertedFiles - identifies files that were modified in intermediate commits but reverted back
- *  to their original state between baseHash and currentHash
+ * getRevertedFiles - identifies files that were added in intermediate commits but then deleted (reverted)
+ *  before reaching currentHash, as well as files that were modified and reverted back to their original state
  *
  * @param String gitDir         Local Git repository directory
  * @param String baseHash       Starting commit hash (e.g., c1)
@@ -283,7 +283,7 @@ def getRevertedFiles(String gitDir, String baseHash, String currentHash) {
 		}
 	}
 	
-	// For each touched file, compare its hash at baseHash and currentHash
+	// For each touched file, compare its state at baseHash and currentHash
 	touchedFiles.each { file ->
 		// Get file hash at baseHash
 		String baseHashCmd = "git -C $gitDir --no-pager rev-parse $baseHash:$file"
@@ -299,15 +299,24 @@ def getRevertedFiles(String gitDir, String baseHash, String currentHash) {
 		def currentHashProc = currentHashCmd.execute()
 		currentHashProc.waitForProcessOutput(currentHashOut, currentHashErr)
 		
-		// If both hashes exist and are identical, the file was reverted
-		if (baseHashErr.size() == 0 && currentHashErr.size() == 0) {
+		// Case 1: File didn't exist at baseHash and doesn't exist at currentHash
+		// This means it was added and then deleted (reverted) in intermediate commits
+		if (baseHashErr.size() > 0 && currentHashErr.size() > 0) {
+			revertedFiles.add(file)
+			if (props.verbose) {
+				println("** (GitUtils.getRevertedFiles) Detected added-then-deleted file: $file")
+			}
+		}
+		// Case 2: File existed at both baseHash and currentHash with identical content
+		// This means it was modified and then reverted back to original state
+		else if (baseHashErr.size() == 0 && currentHashErr.size() == 0) {
 			String baseFileHash = baseHashOut.toString().trim()
 			String currentFileHash = currentHashOut.toString().trim()
 			
 			if (baseFileHash == currentFileHash && !baseFileHash.isEmpty()) {
 				revertedFiles.add(file)
 				if (props.verbose) {
-					println("** (GitUtils.getRevertedFiles) Detected reverted file: $file (hash: $baseFileHash)")
+					println("** (GitUtils.getRevertedFiles) Detected modified-then-reverted file: $file (hash: $baseFileHash)")
 				}
 			}
 		}
