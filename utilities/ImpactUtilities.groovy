@@ -584,7 +584,7 @@ def updateCollection(changedFiles, deletedFiles, renamedFiles, movedFiles) {
 	}
 
 	// update renamed files in collection: retrieve the existing logical file, update its file
-	// attribute to the new path, and save it — preserving all previously scanned dependencies
+	// attribute to the new path, and save it - preserving all previously scanned dependencies
 	renamedFiles.each { oldFile, newFile ->
 		// files in a collection are stored as relative paths from a source directory
 		def oldRelPath = buildUtils.relativizePath(oldFile)

@@ -118,8 +118,8 @@ def validateImpactBuild(String renameFile, String newFilename, PropertyMappings 
 		// Validate that the logical file was updated in-place (renamed) in the collections
 		assert outputStream.contains("*** Updating logical file for renamed file ${props.app}/${renameFile} -> ${props.app}/${newFilename}") : "*! IMPACT BUILD FOR $renameFile DID NOT UPDATE LOGICAL FILE IN COLLECTION\nOUTPUT STREAM:\n$outputStream\n"
 
-		// Validate that the renamed file (R100 similarity) was NOT rescanned — its logical file is updated in-place
-		assert !outputStream.contains("*** Scanning file ${props.app}/${newFilename}") : "*! IMPACT BUILD FOR $renameFile UNEXPECTEDLY RESCANNED ${newFilename} — SHOULD BE UPDATED IN-PLACE\nOUTPUT STREAM:\n$outputStream\n"
+		// Validate that the renamed file (R100 similarity) was NOT rescanned - its logical file is updated in-place
+		assert !outputStream.contains("*** Scanning file ${props.app}/${newFilename}") : "*! IMPACT BUILD FOR $renameFile UNEXPECTEDLY RESCANNED ${newFilename} - SHOULD BE UPDATED IN-PLACE\nOUTPUT STREAM:\n$outputStream\n"
 
 		println "**"
 		println "** IMPACT BUILD TEST - FILE RENAME : PASSED FOR RENAMING $renameFile **"

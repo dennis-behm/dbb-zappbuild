@@ -43,10 +43,10 @@ try {
 	testUtils.runBaselineBuild()
 
 	// TC2: rename + content change
-	// Step 1 — rename the file (git mv)
+	// Step 1 - rename the file (git mv)
 	renameAndCommit(renameFile, newFilename)
 
-	// Step 2 — modify the new file with a blank line so git sees content change
+	// Step 2 - modify the new file with a blank line so git sees content change
 	//           (lowers similarity score below 100, producing R<score> instead of R100)
 	testUtils.updateFileAndCommit(props.appLocation, newFilename)
 
