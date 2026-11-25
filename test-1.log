@@ -1,0 +1,290 @@
+** Executing zAppBuild test framework test/test.groovy
+** Loading property file /var/dbb/dbb-zappbuild-config/build.properties
+** Loading property file /var/dbb/dbb-zappbuild-config/datasets.properties
+** Loading property file /var/dbb/dbb-zappbuild-config/dbb-db2-metadatastore-jenkins.properties
+** Properties args and applications/MortgageApplication/test.properties
+IBMZPLI_V51=
+IBMZPLI_V52=PLI.V5R2.SIBMZCMP
+MACLIB=SYS1.MACLIB
+PDTCCMOD=PDTCC.V1R8.SIPVMODA
+REFERAL=IMSCFG.IMSC.REFERAL
+SASMMOD1=HLASM.SASMMOD1
+SBZUSAMP=RATCFG.ZUNIT.SBZUSAMP
+SCEELKED=CEE.SCEELKED
+SCEEMAC=CEE.SCEEMAC
+SCSQCOBC=WMQ.V9R2M4.SCSQCOBC
+SCSQLOAD=WMQ.V9R2M4.SCSQLOAD
+SCSQPLIC=WMQ.V9R2M4.SCSQPLIC
+SDFHCOB=CICSTS.V5R4.CICS.SDFHCOB
+SDFHLOAD=CICSTS.V5R4.CICS.SDFHLOAD
+SDFHMAC=CICSTS.V5R4.CICS.SDFHMAC
+SDFHPL1=CICSTS.V5R4.CICS.SDFHPL1
+SDFSMAC=IMS.V15R1.SDFSMAC
+SDFSRESL=IMS.V15R1.SDFSRESL
+SDSNEXIT=DBC0CFG.SDSNEXIT
+SDSNLOAD=DBC0CFG.DB2.V12.SDSNLOAD
+SEQAMOD=DEBUG.V14R1.SEQAMOD
+SEQASAMP=DEBUG.V16.SEQASAMP
+SFELLOAD=RDZ.V14R1.SFELLOAD
+SIGYCOMP_V4=
+SIGYCOMP_V6=COBOL.V6R4.SIGYCOMP
+app=MortgageApplication
+appLocation=/u/dbehm/git/dbb-zappbuild/samples/MortgageApplication
+applicationConfRootDir=
+branch=feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files
+buildListFileExt=txt
+buildPropFiles=datasets.properties,Assembler.properties,BMS.properties,MFS.properties,PSBgen.properties,DBDgen.properties,ACBgen.properties,Cobol.properties,LinkEdit.properties,PLI.properties,ZunitConfig.properties
+continueOnScanFailure=true
+createBuildOutputSubfolder=true
+createTestcaseDependency=true
+dbb.LinkEditScanner.excludeFilter=CICSTS.V5R4.CICS.SDFHLOAD.*, CEE.SCEELKED.*
+dbb.RepositoryClient.password=ADMIN
+dbb.RepositoryClient.passwordFile=/u/dbehm/git/dbb-zappbuild/utilities/ADMIN.pw
+dbb.RepositoryClient.url=https://10.3.20.96:10443/dbb
+dbb.RepositoryClient.userId=ADMIN
+dbb.gateway.accountNumber=
+dbb.gateway.groupId=
+dbb.gateway.logLevel=2
+dbb.gateway.procedureName=
+dbb.gateway.regionSize=
+dbb.gateway.type=legacy
+fullBuild_datasetsToCleanUp=BMS,COBOL,OBJ,LINK
+fullBuild_expectedFilesBuilt=epsnbrvl.cbl,epscsmrt.cbl,epsmort.bms,epsmlist.lnk,epsmlis.bms,epsmlist.cbl,epsmpmt.cbl,epscmort.cbl,epscsmrd.cbl
+fullBuild_languageConfigurations_compileParms_fullBuild=Cobol compiler parms for MortgageApplication/cobol/epscmort.cbl = LIB,SOURCE,CICS,SQL::epscmort.cbl
+fullBuild_languageConfigurations_compileParms_fullBuild=Cobol compiler parms for MortgageApplication/cobol/epscsmrd.cbl = LIB,CICS::epscsmrd.cbl
+fullBuild_languageConfigurations_compileParms_fullBuild=Cobol compiler parms for MortgageApplication/cobol/epscsmrt.cbl = LIB,CICS::epscsmrt.cbl
+fullBuild_languageConfigurations_compileParms_fullBuild=Cobol compiler parms for MortgageApplication/cobol/epsmlist.cbl = LIB,SOURCE,CICS::epsmlist.cbl
+fullBuild_languageConfigurations_compileParms_fullBuild=Cobol compiler parms for MortgageApplication/cobol/epsmpmt.cbl = LIB,SOURCE,MAP,LIST::epsmpmt.cbl
+fullBuild_languageConfigurations_compileParms_fullBuild=Cobol compiler parms for MortgageApplication/cobol/epsnbrvl.cbl = LIB,SOURCE,MAP,LIST::epsnbrvl.cbl
+fullBuild_languageConfigurations_datasetsToCleanUp=BMS,COBOL,LINK,LOAD,OBJ
+fullBuild_languageConfigurations_expectedFilesBuilt_fullBuild=epsnbrvl.cbl,epscsmrt.cbl,epsmort.bms,epsmlist.lnk,epsmlis.bms,epsmlist.cbl,epsmpmt.cbl,epscmort.cbl,epscsmrd.cbl
+fullBuild_languageConfigurations_updatedLanguageConfigs_fullBuild=build-conf/language-conf/languageConfigProps01.properties, build-conf/language-conf/languageConfigProps02.properties
+fullBuild_truncation_changedFiles=cobol/epsnbrvl.cbl
+fullBuild_truncation_errorMsg=CopyToPDS of buildFile MortgageApplication/cobol/epsnbrvl.cbl failed with an exception::cobol/epsnbrvl.cbl
+hlq=JENKINS.DBB.TMAIN
+id=DBEHM
+impactBuild_changedFiles=bms/epsmort.bms,cobol/epsmlist.cbl,copybook/epsmtout.cpy,link/epsmlist.lnk
+impactBuild_datasetsToCleanUp=BMS,COBOL,LINK
+impactBuild_deletion_buildPropSetting=build-conf/impactBuildDeletion.properties
+impactBuild_deletion_datasetsToCleanUp=BMS,COBOL,LINK,COPY,BMS.COPY,DBRM,LOAD,MFS,OBJ,TFORMAT
+impactBuild_deletion_deleteFiles=cobol/epscmort.cbl
+impactBuild_deletion_deletedOutputs=LOAD(EPSCMORT)::cobol/epscmort.cbl
+impactBuild_expectedFilesBuilt=epsmlist.cbl,epscsmrt.cbl,epscmort.cbl,epsmlist.lnk,epsnbrvl.cbl::copybook/epsmtout.cpy
+impactBuild_expectedFilesBuilt=epsmlist.cbl,epsmlist.lnk::cobol/epsmlist.cbl
+impactBuild_expectedFilesBuilt=epsmlist.lnk::link/epsmlist.lnk
+impactBuild_expectedFilesBuilt=epsmort.bms,epscmort.cbl,epsnbrvl.cbl::bms/epsmort.bms
+impactBuild_preview_changedFiles=copybook/epsmtout.cpy
+impactBuild_preview_datasetsToCleanUp=BMS,COBOL,LINK
+impactBuild_preview_expectedFilesBuilt=epsmlist.cbl,epscsmrt.cbl,epscmort.cbl,epsmlist.lnk,epsnbrvl.cbl::copybook/epsmtout.cpy
+impactBuild_properties_buildPropSetting=build-conf/impactPropertyChanges.properties
+impactBuild_properties_changedFile=properties/epsmlist.cbl.properties
+impactBuild_properties_datasetsToCleanUp=BMS,COBOL,LINK,COPY,BMS.COPY,DBRM,LOAD,MFS,OBJ,TFORMAT
+impactBuild_properties_expectedFilesBuilt=epscmort.cbl,epscsmrd.cbl,epscsmrt.cbl,epsmlist.cbl,epsmpmt.cbl,epsnbrvl.cbl::application-conf/Cobol.properties
+impactBuild_rename_buildPropSetting=build-conf/impactBuildRename.properties
+impactBuild_rename_datasetsToCleanUp=BMS,COBOL,LINK,COPY,BMS.COPY,DBRM,LOAD,MFS,OBJ,TFORMAT
+impactBuild_rename_expectedFilesBuilt=epscsmr2.cbl::cobol/epscsmrt.cbl
+impactBuild_rename_renameFiles=cobol/epscsmrt.cbl
+impactBuild_rename_renameFilesMapping=cobol/epscsmr2.cbl::cobol/epscsmrt.cbl
+mergeBuild_buildPropSetting=build-conf/mergeBuildOpts.properties
+mergeBuild_changedFiles=bms/epsmlis.bms,cobol/epscsmrt.cbl
+mergeBuild_datasetsToCleanUp=BMS,COBOL,LINK
+mergeBuild_expectedFilesBuilt=epsmlis.bms,epscsmrt.cbl::cobol/epscsmrt.cbl
+mergeBuild_expectedFilesBuilt=epsmlis.bms::bms/epsmlis.bms
+metadataStoreDb2ConnectionConf=/var/dbb/config/db2Connection_Jenkins.conf
+metadataStoreType=db2
+outDir=/u/dbehm/git/dbb-zappbuild-logs/logs_testframework_MortgageApp
+propFiles=/var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties,/var/dbb/dbb-zappbuild-config/dbb-db2-metadatastore-jenkins.properties
+pwFile=/var/dbb/config/db2-pwd-file.xml
+requiredBuildProperties=buildOrder,buildListFileExt
+testBranch=zAppBuildTesting
+test_testOrder=resetBuild.groovy,impactBuild_properties.groovy,resetBuild.groovy
+url=jdbc:db2:somelocation
+userBuild_languageConfigurations_buildFile=MortgageApplication/cobol/epsnbrvl.cbl
+userBuild_languageConfigurations_expected_message01_TC1=*! An existing file property was detected for MortgageApplication/cobol/epsnbrvl.cbl
+userBuild_languageConfigurations_expected_message01_TC2=*! An existing file property was detected for MortgageApplication/cobol/epsnbrvl.cbl
+userBuild_languageConfigurations_expected_message02_TC1=Updating file property override cobol_fileBuildRank = 2 for MortgageApplication/cobol/epsnbrvl.cbl
+userBuild_languageConfigurations_expected_message02_TC2=*! Warning: MortgageApplication/cobol/epsnbrvl.cbl is already mapped as a file pattern as part of a file group wildcard possibly in file.properties.
+userBuild_languageConfigurations_fileProperties_TC1=application-conf/file_languageConfig_TC1.properties
+userBuild_languageConfigurations_fileProperties_TC2=application-conf/file_languageConfig_TC2.properties
+verbose=true
+workspace=/u/dbehm/git/dbb-zappbuild/samples
+zAppBuildDir=/u/dbehm/git/dbb-zappbuild
+** Creating and checking out branch zAppBuildTesting
+M	test/applications/MortgageApplication/test.properties
+M	test/testScripts/impactBuild_properties.groovy
+Your branch is ahead of 'origin/feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files' by 2 commits.
+  (use "git push" to publish your local commits)
+M	test/applications/MortgageApplication/test.properties
+M	test/testScripts/impactBuild_properties.groovy
+On branch zAppBuildTesting
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   test/applications/MortgageApplication/test.properties
+	modified:   test/testScripts/impactBuild_properties.groovy
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	assembler.yaml
+	bms.yaml
+	cobol.yaml
+	linkedit.yaml
+	pli.yaml
+	samples/MortgageApplication/application-conf/ACBgen.properties
+	samples/MortgageApplication/application-conf/Assembler.properties
+	samples/MortgageApplication/application-conf/DBDgen.properties
+	samples/MortgageApplication/application-conf/MFS.properties
+	samples/MortgageApplication/application-conf/PLI.properties
+	samples/MortgageApplication/application-conf/PSBgen.properties
+	samples/MortgageApplication/application-conf/REXX.properties
+	samples/MortgageApplication/application-conf/Transfer.properties
+	samples/MortgageApplication/application-conf/ZunitConfig.properties
+	samples/MortgageApplication/application-conf/bind.properties
+	samples/MortgageApplication/application-conf/reports.properties
+	samples/MortgageApplication/application-conf2/
+	test-1.log
+	test.log
+	test/applications/MortgageApplication/properties/
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+** Invoking test scripts according to test list order: resetBuild.groovy,impactBuild_properties.groovy,resetBuild.groovy
+
+**************************************************************
+** Executing test script resetBuild.groovy
+**************************************************************
+** DBB_HOME = /usr/lpp/dbb/v3r0
+** Executing /usr/lpp/dbb/v3r0/bin/groovyz /u/dbehm/git/dbb-zappbuild/build.groovy --workspace /u/dbehm/git/dbb-zappbuild/samples --application MortgageApplication --outDir /u/dbehm/git/dbb-zappbuild-logs/logs_testframework_MortgageApp --hlq JENKINS.DBB.TMAIN --logEncoding UTF-8 --url jdbc:db2:somelocation --id DBEHM  --pwFile /var/dbb/config/db2-pwd-file.xml --verbose --propFiles /var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties,/var/dbb/dbb-zappbuild-config/dbb-db2-metadatastore-jenkins.properties --reset
+** Validating reset build
+**
+** RESET OF THE BUILD : PASSED **
+**
+
+**************************************************************
+** Executing test script impactBuild_properties.groovy
+**************************************************************
+** DBB_HOME = /usr/lpp/dbb/v3r0
+
+** Running full build to set baseline
+** Executing /usr/lpp/dbb/v3r0/bin/groovyz /u/dbehm/git/dbb-zappbuild/build.groovy --workspace /u/dbehm/git/dbb-zappbuild/samples --application MortgageApplication --outDir /u/dbehm/git/dbb-zappbuild-logs/logs_testframework_MortgageApp --hlq JENKINS.DBB.TMAIN --logEncoding UTF-8 --url jdbc:db2:somelocation --id DBEHM  --pwFile /var/dbb/config/db2-pwd-file.xml --verbose --propFiles /var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties,/var/dbb/dbb-zappbuild-config/dbb-db2-metadatastore-jenkins.properties,/u/dbehm/git/dbb-zappbuild/test/applications/MortgageApplication/build-conf/impactPropertyChanges.properties --fullBuild
+
+** Injecting property update impactBuild_properties_changedFiles property : properties/epsmlist.cbl.properties
+** Copying and committing /u/dbehm/git/dbb-zappbuild/test/applications/MortgageApplication/properties/epsmlist.cbl.properties to /u/dbehm/git/dbb-zappbuild/samples/MortgageApplication/properties/epsmlist.cbl.properties
+
+** Running impact build test for changed file properties/epsmlist.cbl.properties
+** Executing /usr/lpp/dbb/v3r0/bin/groovyz /u/dbehm/git/dbb-zappbuild/build.groovy --workspace /u/dbehm/git/dbb-zappbuild/samples --application MortgageApplication --outDir /u/dbehm/git/dbb-zappbuild-logs/logs_testframework_MortgageApp --hlq JENKINS.DBB.TMAIN --logEncoding UTF-8 --url jdbc:db2:somelocation --id DBEHM  --pwFile /var/dbb/config/db2-pwd-file.xml --verbose --propFiles /var/dbb/dbb-zappbuild-config/build.properties,/var/dbb/dbb-zappbuild-config/datasets.properties,/var/dbb/dbb-zappbuild-config/dbb-db2-metadatastore-jenkins.properties,/u/dbehm/git/dbb-zappbuild/test/applications/MortgageApplication/build-conf/impactPropertyChanges.properties --impactBuild
+** Validating impact build results
+
+** Resetting test branch zAppBuildTesting
+
+** Deleting test branch zAppBuildTesting
+HEAD is now at 1761249 edited program file properties/epsmlist.cbl.properties
+Your branch is ahead of 'origin/feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files' by 2 commits.
+  (use "git push" to publish your local commits)
+Deleted branch zAppBuildTesting (was 1761249).
+On branch feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files
+Your branch is ahead of 'origin/feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files' by 2 commits.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	assembler.yaml
+	bms.yaml
+	cobol.yaml
+	linkedit.yaml
+	pli.yaml
+	samples/MortgageApplication/application-conf/ACBgen.properties
+	samples/MortgageApplication/application-conf/Assembler.properties
+	samples/MortgageApplication/application-conf/DBDgen.properties
+	samples/MortgageApplication/application-conf/MFS.properties
+	samples/MortgageApplication/application-conf/PLI.properties
+	samples/MortgageApplication/application-conf/PSBgen.properties
+	samples/MortgageApplication/application-conf/REXX.properties
+	samples/MortgageApplication/application-conf/Transfer.properties
+	samples/MortgageApplication/application-conf/ZunitConfig.properties
+	samples/MortgageApplication/application-conf/bind.properties
+	samples/MortgageApplication/application-conf/reports.properties
+	samples/MortgageApplication/application-conf2/
+	test-1.log
+	test/applications/MortgageApplication/properties/
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+** Creating and checking out branch zAppBuildTesting
+Your branch is ahead of 'origin/feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files' by 2 commits.
+  (use "git push" to publish your local commits)
+On branch zAppBuildTesting
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	assembler.yaml
+	bms.yaml
+	cobol.yaml
+	linkedit.yaml
+	pli.yaml
+	samples/MortgageApplication/application-conf/ACBgen.properties
+	samples/MortgageApplication/application-conf/Assembler.properties
+	samples/MortgageApplication/application-conf/DBDgen.properties
+	samples/MortgageApplication/application-conf/MFS.properties
+	samples/MortgageApplication/application-conf/PLI.properties
+	samples/MortgageApplication/application-conf/PSBgen.properties
+	samples/MortgageApplication/application-conf/REXX.properties
+	samples/MortgageApplication/application-conf/Transfer.properties
+	samples/MortgageApplication/application-conf/ZunitConfig.properties
+	samples/MortgageApplication/application-conf/bind.properties
+	samples/MortgageApplication/application-conf/reports.properties
+	samples/MortgageApplication/application-conf2/
+	test-1.log
+	test/applications/MortgageApplication/properties/
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+
+** Deleting build PDSEs [BMS, COBOL, LINK, COPY, BMS.COPY, DBRM, LOAD, MFS, OBJ, TFORMAT]
+** Deleting 'JENKINS.DBB.TMAIN.BMS'
+** Deleting 'JENKINS.DBB.TMAIN.COBOL'
+** Deleting 'JENKINS.DBB.TMAIN.LINK'
+** Deleting 'JENKINS.DBB.TMAIN.COPY'
+** Deleting 'JENKINS.DBB.TMAIN.BMS.COPY'
+** Deleting 'JENKINS.DBB.TMAIN.DBRM'
+** Deleting 'JENKINS.DBB.TMAIN.LOAD'
+** Deleting 'JENKINS.DBB.TMAIN.OBJ'
+
+** Deleting test branch zAppBuildTesting
+HEAD is now at 6a29c3f edited program file cobol/epscsmrt.cbl
+Your branch is ahead of 'origin/feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files' by 2 commits.
+  (use "git push" to publish your local commits)
+Deleted branch zAppBuildTesting (was 6a29c3f).
+On branch feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files
+Your branch is ahead of 'origin/feature/582-implement-impactbuildonbuildpropertychanges-for-individual-artifact-properties-files' by 2 commits.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	assembler.yaml
+	bms.yaml
+	cobol.yaml
+	linkedit.yaml
+	pli.yaml
+	samples/MortgageApplication/application-conf/ACBgen.properties
+	samples/MortgageApplication/application-conf/Assembler.properties
+	samples/MortgageApplication/application-conf/DBDgen.properties
+	samples/MortgageApplication/application-conf/MFS.properties
+	samples/MortgageApplication/application-conf/PLI.properties
+	samples/MortgageApplication/application-conf/PSBgen.properties
+	samples/MortgageApplication/application-conf/REXX.properties
+	samples/MortgageApplication/application-conf/Transfer.properties
+	samples/MortgageApplication/application-conf/ZunitConfig.properties
+	samples/MortgageApplication/application-conf/bind.properties
+	samples/MortgageApplication/application-conf/reports.properties
+	samples/MortgageApplication/application-conf2/
+	test-1.log
+	test/applications/MortgageApplication/properties/
+
+nothing added to commit but untracked files present (use "git add" to track)
+
+
+================================================================================================
+* ZAPPBUILD TESTFRAMEWORK COMPLETED.
+   All tests (resetBuild.groovy,impactBuild_properties.groovy,resetBuild.groovy) completed successfully.
+================================================================================================
+** Build finished
